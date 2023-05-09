@@ -394,7 +394,8 @@ class MainWindow(QtWidgets.QMainWindow):
       
         #Add traces
         for trace in traces:
-            line, = sc.axes.step(x=df["Time"], y=df[trace["name"]]+2*traces.index(trace))
+            #Plot time on x axis and each trace on y with an offset to match order in trace_config file
+            line, = sc.axes.step(x=log_data[:,0], y=log_data[:,column_names.index(trace["name"])] + 2*(len(traces) - traces.index(trace)))
 
         self.snap_cursor = SnappingCursor(sc.axes, line)
         sc.mpl_connect('motion_notify_event', self.snap_cursor.on_mouse_move)
