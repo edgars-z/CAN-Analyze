@@ -1,0 +1,47 @@
+[
+    {
+        "name": "C0 - Sheet exit",
+        "high_msg": "0011FF1000070062000100C8",
+        "low_msg": "next"
+    },
+    {
+        "name": "C1 - End of set",
+        "high_msg": "0011FF1000070066000100C8",
+        "low_msg": "next"
+    },
+    {
+        "name": "C2 - Cycle up",
+        "high_msg": "0011FF100007006100000001",
+        "low_msg": "0011FF100007006100000000"
+    },
+    {
+        "name": "S0 - Online",
+        "high_msg": "001000FF8107004100010001",
+        "low_msg": "001000FF8107004100010000"
+    },
+    {
+        "name": "S1 - Fault (hard stop)",
+        "high_msg": "001000FF8107004200010001",
+        "low_msg": "001000FF8107004200010001"
+    },
+    {
+        "name": "S2 - Full (soft stop)",
+        "high_msg": "001000FF8107004300010001",
+        "low_msg": "001000FF8107004300010000"
+    },
+    {
+        "name": "S3 - Sheet delivered",
+        "high_msg": "001000FF8107004400010001",
+        "low_msg": "001000FF8107004400010000"
+    },
+    {
+        "name": "S4 - Set delivered",
+        "high_msg": "001000FF8107004500010001",
+        "low_msg": "001000FF8107004500010000"
+    },
+    {
+        "name": "S5 - Ready",
+        "high_msg": "001000FF8107004A00010001",
+        "low_msg": "001000FF8107004A00010000"
+    }
+]
