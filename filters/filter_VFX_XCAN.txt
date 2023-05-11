@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------
 // CanView Filter
 //
-// Filter för PL88000-System Extern CAN med XCAN (29bit ID)
+// Filter fï¿½r PL88000-System Extern CAN med XCAN (29bit ID)
 //
 // ---Colors---
 // 1=  RED
@@ -240,8 +240,8 @@ xxxxxxxx x 80 0C xx xx xx xx xx xx "CYCLE_STATE_7"
 xxxxxxxx x 80 0D xx xx xx xx xx xx "CYCLE_STATE_8"
 
 SUBFILTERS_100:
-xxxxxxxx x xx 01 00 01 xx xx xx xx "PAR_PUB_CYCLEUP"      
-xxxxxxxx x xx 01 00 02 xx xx xx xx "PAR_PUB_CYCLEDOWN"      
+xxxxxxxx x xx 01 00 01 xx xx xx xx "PAR_PUB_CYCLEUP"      LIGHT_GREEN
+xxxxxxxx x xx 01 00 02 xx xx xx xx "PAR_PUB_CYCLEDOWN"      LIGHT_PINK
 xxxxxxxx x xx 01 00 03 xx xx xx xx "PAR_PUB_POWERON"      
 xxxxxxxx x xx 01 00 04 xx xx xx xx "PAR_PUB_OFFSET"      
 xxxxxxxx x xx 01 00 05 xx xx xx xx "PAR_PUB_STATUS{s200}"      
@@ -266,9 +266,9 @@ xxxxxxxx x xx 01 00 31 xx xx xx xx "PAR_PUB_E2PROM_VALUE"
 xxxxxxxx x xx 01 00 40 xx xx xx xx "PAR_PUB_FLOW_STOP"      
 xxxxxxxx x xx 01 00 50 xx xx xx xx "PAR_PUB_SW_VERSION"      
 xxxxxxxx x xx 01 00 51 xx xx xx xx "PAR_PUB_SW_VERSION_INTEGER"      
-xxxxxxxx x xx 01 01 00 xx xx xx xx "PAR_PUB_STATUS_MODULE_1{s400}"      
-xxxxxxxx x xx 01 01 01 xx xx xx xx "PAR_PUB_STATUS_MODULE_2{s400}"      
-xxxxxxxx x xx 01 01 02 xx xx xx xx "PAR_PUB_STATUS_MODULE_3{s400}"      
+xxxxxxxx x xx 01 01 00 xx xx xx xx "PAR_PUB_STATUS_MODULE_1{s400}"     
+xxxxxxxx x xx 01 01 01 xx xx xx xx "PAR_PUB_STATUS_MODULE_2{s400}"    
+xxxxxxxx x xx 01 01 02 xx xx xx xx "PAR_PUB_STATUS_MODULE_3{s400}"     
 xxxxxxxx x xx 01 01 03 xx xx xx xx "PAR_PUB_STATUS_MODULE_4{s400}"      
 xxxxxxxx x xx 01 01 04 xx xx xx xx "PAR_PUB_STATUS_MODULE_5{s400}"      
 xxxxxxxx x xx 01 01 05 xx xx xx xx "PAR_PUB_STATUS_MODULE_6"      
@@ -295,7 +295,7 @@ xxxxxxxx x xx 01 01 41 xx xx xx xx "PAR_PUB_FORMDELAY_MAX"
 xxxxxxxx x xx 01 01 42 xx xx xx xx "PAR_PUB_SETDELAY_MIN"      
 xxxxxxxx x xx 01 02 00 xx xx xx xx "PAR_PUB_MALFUNCTION_NR_OF"      
 xxxxxxxx x xx 01 02 01 xx xx xx xx "PAR_PUB_MALFUNCTION_INDEX"      
-xxxxxxxx x xx 01 02 02 xx xx xx xx "PAR_PUB_MALFUNCTION_CODE{s500}"      
+xxxxxxxx x xx 01 02 02 xx xx xx xx "PAR_PUB_MALFUNCTION_CODE{s500}"      RED
 xxxxxxxx x xx 01 02 03 xx xx xx xx "PAR_PUB_MALFUNCTION_TEXT"      
 xxxxxxxx x xx 01 02 04 xx xx xx xx "PAR_PUB_SETS_PER_HOUR_SET"      
 xxxxxxxx x xx 01 02 05 xx xx xx xx "PAR_PUB_SETS_PER_HOUR_METER"      
@@ -395,14 +395,14 @@ xxxxxxxx x xx 07 00 13 xx xx xx xx "PAR_INTERFACE_STACKER_FULL"
 xxxxxxxx x xx 07 00 14 xx xx xx xx "PAR_INTERFACE_DFA_DATA_OUT_WATKISS"      
 xxxxxxxx x xx 07 00 15 xx xx xx xx "PAR_INTERFACE_DFA_SHEETEXIT_WATKISS"      
 xxxxxxxx x xx 07 00 16 xx xx xx xx "PAR_INTERFACE_DFA_ENDOFSET_WATKISS"      
-xxxxxxxx x xx 07 00 17 xx xx xx xx "PAR_INTERFACE_DFA_CYCLE_UP_WATKISS"      
+xxxxxxxx x xx 07 00 17 xx xx xx xx "PAR_INTERFACE_DFA_CYCLE_UP_WATKISS"   LIGHT_GREEN   
 xxxxxxxx x xx 07 00 18 xx xx xx xx "PAR_INTERFACE_DFA_END_OF_JOB_WATKISS"      
 xxxxxxxx x xx 07 00 20 xx xx xx xx "PAR_INTERFACE_DFA_DATA_IN_WATKISS"      
 xxxxxxxx x xx 07 00 21 xx xx xx xx "PAR_INTERFACE_DFA_ON_LINE_WATKISS"      
-xxxxxxxx x xx 07 00 22 xx xx xx xx "PAR_INTERFACE_DFA_HARDSTOP_WATKISS"      
-xxxxxxxx x xx 07 00 23 xx xx xx xx "PAR_INTERFACE_DFA_SOFTSTOP_WATKISS"      
-xxxxxxxx x xx 07 00 24 xx xx xx xx "PAR_INTERFACE_DFA_SHEETDELIVERED_WATKISS"      
-xxxxxxxx x xx 07 00 25 xx xx xx xx "PAR_INTERFACE_DFA_SETDELIVERED_WATKISS"      
+xxxxxxxx x xx 07 00 22 xx xx xx xx "PAR_INTERFACE_DFA_HARDSTOP_WATKISS"      RED
+xxxxxxxx x xx 07 00 23 xx xx xx xx "PAR_INTERFACE_DFA_SOFTSTOP_WATKISS"      LIGHT_RED
+xxxxxxxx x xx 07 00 24 xx xx xx xx "PAR_INTERFACE_DFA_SHEETDELIVERED_WATKISS"      LIGHT_BLUE
+xxxxxxxx x xx 07 00 25 xx xx xx xx "PAR_INTERFACE_DFA_SETDELIVERED_WATKISS"      BLUE
 xxxxxxxx x xx 07 00 26 xx xx xx xx "PAR_INTERFACE_DFA_SET_INTERVAL_TIME"      
 xxxxxxxx x xx 07 00 27 xx xx xx xx "PAR_INTERFACE_DFA_DELAY_BETWEEN_SETS"      
 xxxxxxxx x xx 07 00 28 xx xx xx xx "PAR_INTERFACE_PAPER_SIZE_MISMATCH"      
@@ -414,15 +414,15 @@ xxxxxxxx x xx 07 00 3E xx xx xx xx "PAR_INTERFACE_OPTO_SIGNAL_ID_S0_S3"
 xxxxxxxx x xx 07 00 3F xx xx xx xx "PAR_INTERFACE_OPTO_SIGNAL_ID_S4_S7"      
 xxxxxxxx x xx 07 00 40 xx xx xx xx "PAR_INTERFACE_OPTO_DATA_IN"      
 xxxxxxxx x xx 07 00 41 xx xx xx xx "PAR_INTERFACE_OPTO_ONLINE"      
-xxxxxxxx x xx 07 00 42 xx xx xx xx "PAR_INTERFACE_OPTO_HARDSTOP"      
-xxxxxxxx x xx 07 00 43 xx xx xx xx "PAR_INTERFACE_OPTO_SOFTSTOP"      
-xxxxxxxx x xx 07 00 44 xx xx xx xx "PAR_INTERFACE_OPTO_SHEET_DELIVERED"      
-xxxxxxxx x xx 07 00 45 xx xx xx xx "PAR_INTERFACE_OPTO_SET_DELIVERED"      
+xxxxxxxx x xx 07 00 42 xx xx xx xx "PAR_INTERFACE_OPTO_HARDSTOP"      RED
+xxxxxxxx x xx 07 00 43 xx xx xx xx "PAR_INTERFACE_OPTO_SOFTSTOP"      LIGHT_RED
+xxxxxxxx x xx 07 00 44 xx xx xx xx "PAR_INTERFACE_OPTO_SHEET_DELIVERED"      LIGHT_BLUE
+xxxxxxxx x xx 07 00 45 xx xx xx xx "PAR_INTERFACE_OPTO_SET_DELIVERED"      BLUE
 xxxxxxxx x xx 07 00 46 xx xx xx xx "PAR_INTERFACE_OPTO_SET_INTERVAL_TIME"      
 xxxxxxxx x xx 07 00 47 xx xx xx xx "PAR_INTERFACE_OPTO_TIME_BETWEEN_SETS"      
 xxxxxxxx x xx 07 00 48 xx xx xx xx "PAR_INTERFACE_OPTO_TIME_BETWEAN_SHEETS"      
 xxxxxxxx x xx 07 00 49 xx xx xx xx "PAR_INTERFACE_OPTO_TIME_BETWEAN_BUNDLE"      
-xxxxxxxx x xx 07 00 4A xx xx xx xx "PAR_INTERFACE_OPTO_READY"      
+xxxxxxxx x xx 07 00 4A xx xx xx xx "PAR_INTERFACE_OPTO_READY"      YELLOW
 xxxxxxxx x xx 07 00 4B xx xx xx xx "PAR_INTERFACE_OPTO_EWIRE_DATA"      
 xxxxxxxx x xx 07 00 4C xx xx xx xx "PAR_INTERFACE_OPTO_UPSTREAM_DATA"      
 xxxxxxxx x xx 07 00 4D xx xx xx xx "PAR_INTERFACE_OPTO_SEND_UPSTREAM"      
@@ -431,11 +431,11 @@ xxxxxxxx x xx 07 00 5E xx xx xx xx "PAR_INTERFACE_OPTO_COMMAND_ID_C0_C3"
 xxxxxxxx x xx 07 00 5F xx xx xx xx "PAR_INTERFACE_OPTO_COMMAND_ID_C4_C7"      
 xxxxxxxx x xx 07 00 60 xx xx xx xx "PAR_INTERFACE_OPTO_DATA_OUT"      
 xxxxxxxx x xx 07 00 61 xx xx xx xx "PAR_INTERFACE_OPTO_CYCLE_UP"      
-xxxxxxxx x xx 07 00 62 xx xx xx xx "PAR_INTERFACE_OPTO_SHEET_EXIT"      
+xxxxxxxx x xx 07 00 62 xx xx xx xx "PAR_INTERFACE_OPTO_SHEET_EXIT"      LIGHT_GREEN
 xxxxxxxx x xx 07 00 63 xx xx xx xx "PAR_INTERFACE_OPTO_PAPER_SIZE"      
 xxxxxxxx x xx 07 00 64 xx xx xx xx "PAR_INTERFACE_OPTO_THICKNESS"      
 xxxxxxxx x xx 07 00 65 xx xx xx xx "PAR_INTERFACE_OPTO_LINE_SPEED"      
-xxxxxxxx x xx 07 00 66 xx xx xx xx "PAR_INTERFACE_OPTO_END_OF_SET"      
+xxxxxxxx x xx 07 00 66 xx xx xx xx "PAR_INTERFACE_OPTO_END_OF_SET"      GREEN
 xxxxxxxx x xx 07 00 67 xx xx xx xx "PAR_INTERFACE_OPTO_END_OF_JOB"      
 xxxxxxxx x xx 07 00 68 xx xx xx xx "PAR_INTERFACE_OPTO_DOWNSTREAM_DATA"      
 xxxxxxxx x xx 07 00 69 xx xx xx xx "PAR_INTERFACE_OPTO_SEND_DOWNSTREAM"      
@@ -866,55 +866,55 @@ xx10xxxx x xx xx xx xx xx xx xx xx ".Error"     PINK
 xx11xxxx x xx xx xx xx 00 00 00 01 "-CLEAR"     BLUE
 
 SUBFILTERS_400:
-xx10xxxx x xx xx xx xx xx xx 00 0B "-Interlock"
-xx10xxxx x xx xx xx xx xx xx 00 0C "-Cover open"
-xx10xxxx x xx xx xx xx xx xx 00 32 "-ERROR.VF-50 BCR wrong page number"
-xx10xxxx x xx xx xx xx xx xx 00 33 "-ERROR.VF-51 BCR wrong sequence number"
-xx10xxxx x xx xx xx xx xx xx 00 34 "-ERROR.VF-52 BCR wrong set ID"
-xx10xxxx x xx xx xx xx xx xx 00 35 "-ERROR.VF-53 BCR wrong job ID"
-xx10xxxx x xx xx xx xx xx xx 00 36 "-ERROR.VF-54 BCR not read"
-xx10xxxx x xx xx xx xx xx xx 00 37 "-ERROR.VF-55 BCR not connected tray A"
-xx10xxxx x xx xx xx xx xx xx 00 38 "-ERROR.VF-56 BCR not connected tray B"
-xx10xxxx x xx xx xx xx xx xx 00 39 "-ERROR.VF-57 BCR parameters not saved in BCR tray A"
-xx10xxxx x xx xx xx xx xx xx 00 3A "-ERROR.VF-58 BCR parameters not saved in BCR tray B"
-xx10xxxx x xx xx xx xx xx xx 00 3B "-ERROR.VF-59 BCR wrong page number and page count"
+xx10xxxx x xx xx xx xx xx xx 00 0B "-Interlock"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 0C "-Cover open"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 32 "-ERROR.VF-50 BCR wrong page number"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 33 "-ERROR.VF-51 BCR wrong sequence number"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 34 "-ERROR.VF-52 BCR wrong set ID"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 35 "-ERROR.VF-53 BCR wrong job ID"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 36 "-ERROR.VF-54 BCR not read"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 37 "-ERROR.VF-55 BCR not connected tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 38 "-ERROR.VF-56 BCR not connected tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 39 "-ERROR.VF-57 BCR parameters not saved in BCR tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 3A "-ERROR.VF-58 BCR parameters not saved in BCR tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 3B "-ERROR.VF-59 BCR wrong page number and page count"    LIGHT_RED
 
-xx10xxxx x xx xx xx xx xx xx 00 58 "-ERROR.VF-88 No answer on PAC"
-xx10xxxx x xx xx xx xx xx xx 00 59 "-ERROR.VF-89 No feed sequence"
-xx10xxxx x xx xx xx xx xx xx 00 62 "-ERROR.VF-98 Exit jam"
+xx10xxxx x xx xx xx xx xx xx 00 58 "-ERROR.VF-88 No answer on PAC"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 59 "-ERROR.VF-89 No feed sequence"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 62 "-ERROR.VF-98 Exit jam"    LIGHT_RED
 
-xx10xxxx x xx xx xx xx xx xx 00 64 "-ERROR.VF-100 Misfeed in tray A"
-xx10xxxx x xx xx xx xx xx xx 00 65 "-ERROR.VF-101 Jam in tray A"
-xx10xxxx x xx xx xx xx xx xx 00 66 "-ERROR.VF-102 Too long in tray A"
-xx10xxxx x xx xx xx xx xx xx 00 67 "-ERROR.VF-103 Too short in tray A"
-xx10xxxx x xx xx xx xx xx xx 00 68 "-ERROR.VF-104 Too thick in tray A"
-xx10xxxx x xx xx xx xx xx xx 00 69 "-ERROR.VF-105 DSD functionality uncertain in tray A"
-xx10xxxx x xx xx xx xx xx xx 00 6A "-ERROR.VF-106 Too thick USDSD in tray A"
-xx10xxxx x xx xx xx xx xx xx 00 6B "-ERROR.VF-107 Tray A empty"
-xx10xxxx x xx xx xx xx xx xx 00 6C "-ERROR.VF-108 Too thin in tray A"
-xx10xxxx x xx xx xx xx xx xx 00 6D "-ERROR.VF-109 Please set side guides in process position tray A"
-xx10xxxx x xx xx xx xx xx xx 00 6E "-ERROR.VF-110 Overloaded tray A"
-xx10xxxx x xx xx xx xx xx xx 00 A2 "-ERROR.VF-162 DSD sensors covered in tray A"
+xx10xxxx x xx xx xx xx xx xx 00 64 "-ERROR.VF-100 Misfeed in tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 65 "-ERROR.VF-101 Jam in tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 66 "-ERROR.VF-102 Too long in tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 67 "-ERROR.VF-103 Too short in tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 68 "-ERROR.VF-104 Too thick in tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 69 "-ERROR.VF-105 DSD functionality uncertain in tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 6A "-ERROR.VF-106 Too thick USDSD in tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 6B "-ERROR.VF-107 Tray A empty"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 6C "-ERROR.VF-108 Too thin in tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 6D "-ERROR.VF-109 Please set side guides in process position tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 6E "-ERROR.VF-110 Overloaded tray A"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 A2 "-ERROR.VF-162 DSD sensors covered in tray A"    LIGHT_RED
 
-xx10xxxx x xx xx xx xx xx xx 00 C8 "-ERROR.VF-200 Misfeed in tray B"
-xx10xxxx x xx xx xx xx xx xx 00 C9 "-ERROR.VF-201 Jam in tray B"
-xx10xxxx x xx xx xx xx xx xx 00 CA "-ERROR.VF-202 Too long in tray B"
-xx10xxxx x xx xx xx xx xx xx 00 CB "-ERROR.VF-203 Too short in tray B"
-xx10xxxx x xx xx xx xx xx xx 00 CC "-ERROR.VF-204 Too thick in tray B"
-xx10xxxx x xx xx xx xx xx xx 00 CD "-ERROR.VF-205 DSD functionality uncertain in tray B"
-xx10xxxx x xx xx xx xx xx xx 00 CE "-ERROR.VF-206 Too thick USDSD in tray B"
-xx10xxxx x xx xx xx xx xx xx 00 CF "-ERROR.VF-207 Tray B empty"
-xx10xxxx x xx xx xx xx xx xx 00 D0 "-ERROR.VF-208 Too thin in tray B"
-xx10xxxx x xx xx xx xx xx xx 00 D1 "-ERROR.VF-209 Please set side guides in process position tray B"
-xx10xxxx x xx xx xx xx xx xx 00 D2 "-ERROR.VF-210 Overloaded tray B"
-xx10xxxx x xx xx xx xx xx xx 01 06 "-ERROR.VF-262 DSD sensors covered in tray B"
+xx10xxxx x xx xx xx xx xx xx 00 C8 "-ERROR.VF-200 Misfeed in tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 C9 "-ERROR.VF-201 Jam in tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 CA "-ERROR.VF-202 Too long in tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 CB "-ERROR.VF-203 Too short in tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 CC "-ERROR.VF-204 Too thick in tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 CD "-ERROR.VF-205 DSD functionality uncertain in tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 CE "-ERROR.VF-206 Too thick USDSD in tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 CF "-ERROR.VF-207 Tray B empty"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 D0 "-ERROR.VF-208 Too thin in tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 D1 "-ERROR.VF-209 Please set side guides in process position tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 00 D2 "-ERROR.VF-210 Overloaded tray B"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 01 06 "-ERROR.VF-262 DSD sensors covered in tray B"    LIGHT_RED
 
-xx10xxxx x xx xx xx xx xx xx 01 2C "-ERROR.VF-300 Exit sensor not reached in time"
-xx10xxxx x xx xx xx xx xx xx 01 2D "-ERROR.VF-301 Exit jam"
-xx10xxxx x xx xx xx xx xx xx 01 2E "-ERROR.VF-302 No feed sequence"
+xx10xxxx x xx xx xx xx xx xx 01 2C "-ERROR.VF-300 Exit sensor not reached in time"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 01 2D "-ERROR.VF-301 Exit jam"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 01 2E "-ERROR.VF-302 No feed sequence"    LIGHT_RED
 
-xx10xxxx x xx xx xx xx xx xx 01 F4 "-ERROR.VF-500 Downstream unit timeout"
-xx10xxxx x xx xx xx xx xx xx 01 F5 "-ERROR.VF-501 eWire element spool not loaded"
+xx10xxxx x xx xx xx xx xx xx 01 F4 "-ERROR.VF-500 Downstream unit timeout"    LIGHT_RED
+xx10xxxx x xx xx xx xx xx xx 01 F5 "-ERROR.VF-501 eWire element spool not loaded"    LIGHT_RED
 
 
 SUBFILTERS_500:
@@ -969,8 +969,8 @@ xx10xxxx x xx xx xx xx xx xx 04 18 "-ERROR.VF-1048 Q203 Home Postion Sensor M201
 xx10xxxx x xx xx xx xx xx xx 04 19 "-ERROR.VF-1049 Q203 Home Postion Sensor M201 Not Deactivated in Time"
 
 xx10xxxx x xx xx xx xx xx xx 04 1E "-ERROR.VF-1054 Interlock Missmatch, No Interlock with Power"
-xx10xxxx x xx xx xx xx xx xx 04 1F "-ERROR.VF-1055 Bin A Didn’t Open"
-xx10xxxx x xx xx xx xx xx xx 04 20 "-ERROR.VF-1056 Bin B Didn’t Open"
+xx10xxxx x xx xx xx xx xx xx 04 1F "-ERROR.VF-1055 Bin A Didnï¿½t Open"
+xx10xxxx x xx xx xx xx xx xx 04 20 "-ERROR.VF-1056 Bin B Didnï¿½t Open"
 xx10xxxx x xx xx xx xx xx xx 04 21 "-ERROR.VF-1057 Software Versions Machine Mismatch"
 xx10xxxx x xx xx xx xx xx xx 04 22 "-ERROR.VF-1058 Software Versions System Mismatch"
 xx10xxxx x xx xx xx xx xx xx 04 23 "-ERROR.VF-1059 Software Versions System Mismatch"

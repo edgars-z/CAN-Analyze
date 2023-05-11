@@ -234,6 +234,24 @@ class TableModel(QtCore.QAbstractTableModel):
             else:
                 return Qt.AlignmentFlag.AlignVCenter + Qt.AlignmentFlag.AlignHCenter
 
+        #Highlight rows in colours according to the applied filter
+        if role == Qt.ItemDataRole.BackgroundRole:
+            value = self._data[index.row()]
+            row_colour = value[column_names.index("Colour")]
+            if row_colour > "":
+                #If a colour value is defined for this row, strip underscores and then check if this colour is valid. If not, redefine.
+                row_colour = row_colour.replace("_","")
+                if not QtGui.QColor(row_colour).isValid():
+                    if row_colour == "LIGHTRED":
+                        row_colour = "TOMATO"
+                    elif row_colour == "LIGHTPURPLE":
+                        row_colour = "MEDIUMPURPLE"
+                    elif row_colour == "LIGHTORANGE":
+                        row_colour = "KHAKI"
+                    else:
+                        row_colour = "CYAN"
+                return QtGui.QColor(row_colour)
+
     def rowCount(self, index):
         return self._data.shape[0]
 
@@ -309,6 +327,7 @@ class SnappingCursor:
             self.text.set_position((x,0))
             self.ax.figure.canvas.draw()
 
+    @QtCore.pyqtSlot(QtGui.QKeyEvent)
     def on_press(self, event):
         print("keypress detected:")
         if event.key == " ":
@@ -362,13 +381,14 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
-    def keyPressEvent(self, event):
-        print("Key pressed in MplCanvas:",event.key())
-        super().keyPressEvent(event)
-
+    @QtCore.pyqtSlot(QtGui.QKeyEvent)
+    def onKeyPressEvent(self, event: QtGui.QKeyEvent):
+        print(event.key())
+        return
 
 class MainWindow(QtWidgets.QMainWindow):
-   
+    key_pressed = QtCore.pyqtSignal(QtGui.QKeyEvent)
+
     def __init__(self, *args, **kwargs):
         global traces, log_data, column_names
 
@@ -386,7 +406,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setWindowTitle("CAN Analyze v"+version)
         scriptDir = os.path.dirname(os.path.realpath(__file__))
-        self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'icon.png'))
+        self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'images/icon.png'))
 
         #Set up matplotlib canvas widget
         sc = MplCanvas(self, width=5, height=4, dpi=100)
@@ -400,8 +420,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.snap_cursor = SnappingCursor(sc.axes, line)
         sc.mpl_connect('motion_notify_event', self.snap_cursor.on_mouse_move)
         sc.mpl_connect('button_press_event', self.snap_cursor.on_mouse_click)
+        self.key_pressed.connect(sc.onKeyPressEvent)
         #sc.mpl_connect('key_press_event', self.snap_cursor.on_press)
-        
+        #sc.keyPressed.connect(self.snap_cursor.on_press)
+        #self.key_pressed.connect(self.snap_cursor.on_press)
 
         #Set up table widget
         self.table = QtWidgets.QTableView()
@@ -439,11 +461,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.table.selectRow(row)
         self.table.scrollTo(self.table.model().index(row, 0),QtWidgets.QAbstractItemView.ScrollHint.PositionAtCenter)
 
-    def keyPressEvent(self, event):
-        print("Key pressed in MainWindow:",event.key())
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
+        print("Key event emitted")
         self.key_pressed.emit(event)
-        super().keyPressEvent(event)
-
+        return super().keyPressEvent(event)
 
 appid = u'cananalyze.cananalyze.v'+version # application ID for Windows to set correct icon
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
