@@ -271,6 +271,21 @@ class TableModel(QtCore.QAbstractTableModel):
                 return section+1
 
 
+class TableView(QtWidgets.QTableView):
+    
+    def __init__(self):
+        super(TableView, self).__init__()
+        
+    def keyPressEvent(self, event):
+        """Reimplement Qt method"""
+        print("TableView keypress: ",event.key())
+        if event.matches(QtGui.QKeySequence.StandardKey.Copy):
+            #self.copy()
+            print("Ctrl + C from TableView")
+            event.accept()
+        else:
+            QtWidgets.QTableView.keyPressEvent(self, event)
+
 class SnappingCursor:
     """
     A cross-hair cursor that snaps to the data point of a line, which is
@@ -327,7 +342,6 @@ class SnappingCursor:
             self.text.set_position((x,0))
             self.ax.figure.canvas.draw()
 
-    @QtCore.pyqtSlot(QtGui.QKeyEvent)
     def on_press(self, event):
         print("keypress detected:")
         if event.key == " ":
@@ -368,10 +382,11 @@ class SnappingCursor:
             print(event.key)
 
     def on_mouse_click(self, event):
-        #print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %   ('double' if event.dblclick else 'single', event.button,           event.x, event.y, event.xdata, event.ydata))
-        index = min(np.searchsorted(self.x, event.xdata), len(self.x) - 1)
-        #print("Row: ", index)
-        w.highlightRow(index)
+        if event.inaxes:
+            #print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %   ('double' if event.dblclick else 'single', event.button,           event.x, event.y, event.xdata, event.ydata))
+            index = min(np.searchsorted(self.x, event.xdata), len(self.x) - 1)
+            #print("Row: ", index)
+            w.highlightRow(index)
 
 
 class MplCanvas(FigureCanvasQTAgg):
@@ -379,15 +394,12 @@ class MplCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
+        #self.setFocusPolicy
         super(MplCanvas, self).__init__(fig)
 
-    @QtCore.pyqtSlot(QtGui.QKeyEvent)
-    def onKeyPressEvent(self, event: QtGui.QKeyEvent):
-        print(event.key())
-        return
+
 
 class MainWindow(QtWidgets.QMainWindow):
-    key_pressed = QtCore.pyqtSignal(QtGui.QKeyEvent)
 
     def __init__(self, *args, **kwargs):
         global traces, log_data, column_names
@@ -410,8 +422,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         #Set up matplotlib canvas widget
         sc = MplCanvas(self, width=5, height=4, dpi=100)
-        #sc.axes.plot([0,1,2,3,4], [10,1,20,3,40])
-      
+        #Must set focus policy for keyboard events to be propagated
+        sc.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus) 
+
         #Add traces
         for trace in traces:
             #Plot time on x axis and each trace on y with an offset to match order in trace_config file
@@ -420,15 +433,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.snap_cursor = SnappingCursor(sc.axes, line)
         sc.mpl_connect('motion_notify_event', self.snap_cursor.on_mouse_move)
         sc.mpl_connect('button_press_event', self.snap_cursor.on_mouse_click)
-        self.key_pressed.connect(sc.onKeyPressEvent)
-        #sc.mpl_connect('key_press_event', self.snap_cursor.on_press)
-        #sc.keyPressed.connect(self.snap_cursor.on_press)
-        #self.key_pressed.connect(self.snap_cursor.on_press)
+        sc.mpl_connect('key_press_event', self.snap_cursor.on_press)
 
         #Set up table widget
-        self.table = QtWidgets.QTableView()
+        self.table = TableView() 
         #Show first 12 columns in the table
-        #self.model = TableModel(df.iloc[:, :12])
         self.model = TableModel((log_data, column_names))
         self.table.setModel(self.model)
         self.table.resizeColumnsToContents()
@@ -461,10 +470,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.table.selectRow(row)
         self.table.scrollTo(self.table.model().index(row, 0),QtWidgets.QAbstractItemView.ScrollHint.PositionAtCenter)
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent):
-        print("Key event emitted")
-        self.key_pressed.emit(event)
-        return super().keyPressEvent(event)
+    def keyPressEvent(self, event):
+        """Reimplement Qt method"""
+        print(event.key())
+        #if event.matches(QtGui.QKeySequence.StandardKey.Copy):
+        #    #self.copy()
+        #    print("Ctrl + C from TableView")
+        #    event.accept()
+        #else:
+        QtWidgets.QMainWindow.keyPressEvent(self, event)
 
 appid = u'cananalyze.cananalyze.v'+version # application ID for Windows to set correct icon
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
