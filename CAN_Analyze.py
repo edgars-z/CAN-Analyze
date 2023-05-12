@@ -236,44 +236,57 @@ class TableModel(QtCore.QAbstractTableModel):
 
         #Highlight rows in colours according to the applied filter
         if role == Qt.ItemDataRole.BackgroundRole:
-            value = self._data[index.row()]
-            row_colour = value[column_names.index("Colour")]
-            if row_colour > "":
-                #If a colour value is defined for this row, strip underscores and then check if this colour is valid. If not, redefine.
-                row_colour = row_colour.replace("_","")
+            if index.column() == column_names.index("Description"):
+                value = self._data[index.row()]
+                row_colour = value[column_names.index("Colour")]
+                (r,g,b) = (255, 255, 255)
+                if row_colour > "":
+                    #If a colour value is defined for this row, work out corresponding RGB value and apply it
+                    # // ---Colors from CanView---
+                    match row_colour:
+                        case "RED":
+                            (r,g,b) = (220, 0, 0)
+                        case "GREEN":
+                            (r,g,b) = (0, 220, 0)
+                        case "BLUE":
+                            (r,g,b) = (0, 128, 255)
+                        case "YELLOW":
+                            (r,g,b) = (255, 255, 0)
+                        case "GREY": 
+                            (r,g,b) = (190, 190, 190)
+                        case "PURPLE":
+                            (r,g,b) = (255, 0, 255)
+                        case "ORANGE":
+                            (r,g,b) = (255, 128, 64)
+                        case "PINK":
+                            (r,g,b) = (255, 100, 177)
+                        case "LIGHT_RED":
+                            (r,g,b) = (255, 125, 125)
+                        case "LIGHT_GREEN":
+                            (r,g,b) = (213, 255, 213)
+                        case "LIGHT_BLUE":
+                            (r,g,b) = (170, 213, 255)
+                        case "LIGHT_YELLOW":
+                            (r,g,b) = (255, 255, 190)
+                        case "LIGHT_GREY":
+                            (r,g,b) = (223, 223, 223)
+                        case "LIGHT_PURPLE":
+                            (r,g,b) = (255, 150, 255)
+                        case "LIGHT_ORANGE":
+                            (r,g,b) = (255, 165, 121)
+                        case "LIGHT_PINK":
+                            (r,g,b) = (255, 170, 213)
+                        case _:
+                            (r,g,b) = (255, 255, 255)
 
+            elif index.column() == column_names.index("ID"):
+                #CAN msg ID background light green rgb(200, 255, 200).
+                (r,g,b) = (200, 255, 200)
 
-                #CAN msg ID background light green rgb(200, 255, 200). Only filter description is coloured
-                #reduce line spacing
+            else:
+                (r,g,b) = (255, 255, 255)
 
-                # // ---Colors---
-                # // 1=  RED rgb(220, 0, 0)
-                # // 2=  GREEN rgb(0, 220, 0)
-                # // 3=  BLUE rgb(0, 128, 255)
-                # // 4=  YELLOW rgb(255, 255, 0)
-                # // 5=  GREY rgb(190, 190, 190)
-                # // 6=  PURPLE rgb(255, 0, 255)
-                # // 7=  ORANGE rgb(255, 128, 64)
-                # // 8=  PINK rgb(255, 100, 177)
-                # // 9=  LIGHT_RED rgb(255, 125, 125)
-                # // 10= LIGHT_GREEN rgb(213, 255, 213)
-                # // 11= LIGHT_BLUE rgb(170, 213, 255)
-                # // 12= LIGHT_YELLOW rgb(255, 255, 190)
-                # // 13= LIGHT_GREY rgb(223, 223, 223)
-                # // 14= LIGHT_PURPLE rgb(255, 150, 255)
-                # // 15= LIGHT_ORANGE rgb(255, 165, 121)
-                # // 16= LIGHT_PINK rgb(255, 170, 213)
-
-                if not QtGui.QColor(row_colour).isValid():
-                    if row_colour == "LIGHTRED":
-                        row_colour = "TOMATO"
-                    elif row_colour == "LIGHTPURPLE":
-                        row_colour = "MEDIUMPURPLE"
-                    elif row_colour == "LIGHTORANGE":
-                        row_colour = "KHAKI"
-                    else:
-                        row_colour = "CYAN"
-                return QtGui.QColor(row_colour)
+            return QtGui.QColor.fromRgb(r,g,b)
 
     def rowCount(self, index):
         return self._data.shape[0]
@@ -366,7 +379,7 @@ class SnappingCursor:
             self.ax.figure.canvas.draw()
 
     def on_press(self, event):
-        print("keypress detected:")
+        print("keypress detected in matplotlib canvas:")
         if event.key == " ":
             print("spacebar")
             if not event.inaxes:
@@ -417,7 +430,6 @@ class MplCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
-        #self.setFocusPolicy
         super(MplCanvas, self).__init__(fig)
 
 
@@ -463,8 +475,12 @@ class MainWindow(QtWidgets.QMainWindow):
         #Show first 12 columns in the table
         self.model = TableModel((log_data, column_names))
         self.table.setModel(self.model)
+
+        #Resize table to fit contents
+        self.table.setVisible(False)
         self.table.resizeColumnsToContents()
-        #self.table.resizeRowsToContents()
+        self.table.verticalHeader().setDefaultSectionSize(self.table.fontMetrics().height())
+        self.table.setVisible(True)
 
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
         toolbar = NavigationToolbar(sc, self)
