@@ -241,6 +241,29 @@ class TableModel(QtCore.QAbstractTableModel):
             if row_colour > "":
                 #If a colour value is defined for this row, strip underscores and then check if this colour is valid. If not, redefine.
                 row_colour = row_colour.replace("_","")
+
+
+                #CAN msg ID background light green rgb(200, 255, 200). Only filter description is coloured
+                #reduce line spacing
+
+                # // ---Colors---
+                # // 1=  RED rgb(220, 0, 0)
+                # // 2=  GREEN rgb(0, 220, 0)
+                # // 3=  BLUE rgb(0, 128, 255)
+                # // 4=  YELLOW rgb(255, 255, 0)
+                # // 5=  GREY rgb(190, 190, 190)
+                # // 6=  PURPLE rgb(255, 0, 255)
+                # // 7=  ORANGE rgb(255, 128, 64)
+                # // 8=  PINK rgb(255, 100, 177)
+                # // 9=  LIGHT_RED rgb(255, 125, 125)
+                # // 10= LIGHT_GREEN rgb(213, 255, 213)
+                # // 11= LIGHT_BLUE rgb(170, 213, 255)
+                # // 12= LIGHT_YELLOW rgb(255, 255, 190)
+                # // 13= LIGHT_GREY rgb(223, 223, 223)
+                # // 14= LIGHT_PURPLE rgb(255, 150, 255)
+                # // 15= LIGHT_ORANGE rgb(255, 165, 121)
+                # // 16= LIGHT_PINK rgb(255, 170, 213)
+
                 if not QtGui.QColor(row_colour).isValid():
                     if row_colour == "LIGHTRED":
                         row_colour = "TOMATO"
