@@ -141,7 +141,6 @@ def add_trace_points():
     datalines = len(df.index)
     for trace in traces:
         col_index = column_names.index(trace["name"])
-        df[trace["name"]] = [random.randint(0,1) for i in range(datalines)]
         for row in range(len(log_data)):
             test_string = log_data[row][3:12].sum()
             if test_string == trace["high_msg"]:
@@ -437,23 +436,36 @@ class MplCanvas(FigureCanvasQTAgg):
 class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
-        global traces, log_data, column_names
+        global traces, log_data, column_names, filter_list
 
-        #log_file_path = "samples/xcan_log_with_descriptions.txt"
-        log_file_path = "samples/4_0-log.txt"
-        filter_file_path = "filters/filter_VFX_XCAN.txt"
-        trace_config_file_path = "trace_config.json"
-        loadFile(log_file_path)
-        loadFile(filter_file_path)
-        loadFile(trace_config_file_path)
-        apply_filters()
-        add_trace_points()
-        
         #Set up window
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setWindowTitle("CAN Analyze v"+version)
         scriptDir = os.path.dirname(os.path.realpath(__file__))
-        self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + 'images/icon.png'))
+        self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + "images/icon.png"))
+        default_filter_file_path = scriptDir + os.path.sep + "filters/filter_default.txt"
+        default_trace_config_file_path = scriptDir + os.path.sep + "config/trace_config.json"
+
+        #TODO: handle startup with nothing loaded
+        #TODO: enable loading at any point during runtime
+        #TODO: handle multiple log files loaded at once
+
+        #Open dialog to load one or more files
+        loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All Files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")
+
+        for loaded_file in loaded_files:
+            loadFile(loaded_file)
+
+        #Check if any filters or traces were loaded. If not, then load defaults
+        if len(filter_list) == 0:
+            loadFile(default_filter_file_path)
+        if len(traces) == 0:
+            loadFile(default_trace_config_file_path)
+
+        apply_filters()
+        add_trace_points()
+        
+
 
         #Set up matplotlib canvas widget
         sc = MplCanvas(self, width=5, height=4, dpi=100)
