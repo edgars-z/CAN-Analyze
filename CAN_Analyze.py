@@ -1,203 +1,20 @@
-import sys
-import os
 import ctypes
-
-import matplotlib
-matplotlib.use('QtAgg')
-
+import os
+import sys
+import numpy as np
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
-
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+import matplotlib
 from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import \
+    NavigationToolbar2QT as NavigationToolbar
 
-from fnmatch import fnmatch
+from DataHandler import DataHandler
 
-import numpy as np
-import random
+version = u"0.1.1"
 
-import pandas as pd
-
-import json
-
-version = u"0.1.0"
-
-df = pd.DataFrame()
-log_data = np.array([])
-column_names = ["Time", "Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "Colour"]
-
-#A list of filters to be applied to the XCAN log
-#columns = ["Level", "Filter", "Description", "Subfilter", "Colour"]
-filter_list = []
-
-#A list of dicts containing trace name, high message, low message
-traces = []
-
-def loadFile(filename):
-    """
-    Determines whether the file is a CanView log or CanView filter or trace configuration and then loads it appropriately
-    """
-    if fnmatch(filename,"*.json"):
-        loadTraceConfig(filename)
-    else:    
-        file_header = open(filename, "r").read().splitlines()
-        if "HEADER_BEGIN" in file_header[0]:
-            loadCanViewlog(filename)
-        elif "// CanView Filter" in file_header[1]:
-            loadCanViewfilter(filename)
-        else:
-            print("File type not recognized")
-
-def loadCanViewlog(filename):
-
-    file_header = open(filename, "r").read().splitlines()
-
-    #Check if this is a CanView log
-    if "HEADER_BEGIN" in file_header[0]:
-        #Get the 3rd row of the header which contains column spacing for this file
-        col_header = [int(i) for i in file_header[3].split(",")]
-
-    column_spacing = [
-        (3, 2+col_header[0]), #Delta time
-        (2+col_header[0], 2+col_header[0]+col_header[1]), #Description
-        (2+col_header[0]+col_header[1], 2+col_header[0]+col_header[1]+col_header[2]), #Message ID
-        (2+col_header[0]+col_header[1]+col_header[2]+0*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+0*col_header[3]+2),
-        (2+col_header[0]+col_header[1]+col_header[2]+1*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+1*col_header[3]+2),
-        (2+col_header[0]+col_header[1]+col_header[2]+2*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+2*col_header[3]+2),
-        (2+col_header[0]+col_header[1]+col_header[2]+3*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+3*col_header[3]+2),
-        (2+col_header[0]+col_header[1]+col_header[2]+4*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+4*col_header[3]+2),
-        (2+col_header[0]+col_header[1]+col_header[2]+5*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+5*col_header[3]+2),
-        (2+col_header[0]+col_header[1]+col_header[2]+6*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+6*col_header[3]+2),
-        (2+col_header[0]+col_header[1]+col_header[2]+7*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+7*col_header[3]+2),
-        ]
-    column_names = ["Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"]
-    global df, log_data
-    df = pd.read_fwf(filename,colspecs=column_spacing, skiprows=6, dtype=str, names=column_names, index_col=False)
-
-    #Remove units from delta time and add a new column with cumulative time
-    df["Delta"] = df["Delta"].str.replace("ms","").astype("float")
-    df.insert(loc=0,column="Time",value=0.0)
-    df["Time"] = df["Delta"].cumsum()
-    df["Colour"] = ""
-    log_data = df.replace(np.nan,"").to_numpy()
-
-
-def loadCanViewfilter(filename):
-    global filter_list
-    filter_file = open(filename, "r").read().splitlines()
-
-    filter_level = 0
-    #Iterate through lines in filter file
-    for line in filter_file:
-        if line[:2] == "//" or line[:2] == "--" or line == "" or len(line)<8:
-            #Skip comment lines, dividers or empty lines
-            continue
-        elif "FILTERS:" in line:
-            #Found the start of the main filter list
-            filter_level = 1
-        elif "SUBFILTERS_" in line:
-            #Extract the number of the subfilter between "_" and ":"
-            filter_level = int(line.partition("_")[2].partition(":")[0])
-
-        else:
-            filter_line = line.replace("\t"," ").split("\"")
-            #Remove len from the filter
-            filter_line[0] = filter_line[0].replace(" x ","")
-            #Remove spaces and replace x with ? wildcard
-            filter_line[0] = filter_line[0].replace(" ","")
-            filter_line[0] = filter_line[0].replace("x","?")
-
-            if "{s" in filter_line[1]:
-                filter_description = filter_line[1].partition("{s")[0]
-                subfilter_level = int(filter_line[1].partition("{s")[2].partition("}")[0])
-            else:
-                filter_description = filter_line[1]
-                subfilter_level = 0
-            
-
-            #Add it to the filter list
-            #Level, filter, description, subfilter (if present), colour (if present)
-            filter_list.append([filter_level, filter_line[0], filter_description, subfilter_level, filter_line[2].strip()])
-
-def loadTraceConfig(filename):
-    global traces, column_names, log_data
-    with open(filename, "r") as read_file:
-        traces = json.load(read_file)
-        datalines = len(log_data)
-        for trace in traces:
-            column_names.append(trace["name"])
-            log_data = np.concatenate([log_data,np.zeros((datalines,1), dtype=np.int8)],axis=1)
-
-
-
-def saveTraceConfig(filename):
-    global traces
-    with open(filename, "w") as write_file:
-        json.dump(traces, write_file)
-
-
-def add_trace_points():
-    global traces, column_names, log_data
-    datalines = len(df.index)
-    for trace in traces:
-        col_index = column_names.index(trace["name"])
-        for row in range(len(log_data)):
-            test_string = log_data[row][3:12].sum()
-            if test_string == trace["high_msg"]:
-                log_data[row][col_index] = 1
-            elif trace["low_msg"] == "next" or test_string == trace["low_msg"]:
-                log_data[row][col_index] = 0
-            else:
-                log_data[row][col_index] = log_data[row-1][col_index]
-
-
-def apply_filters():
-    global filter_list, log_data
-    for row in range(len(log_data)):
-        #Format row into a single string without NaNs
-        test_string = log_data[row][3:12].sum()
-        #Clear any existing description
-        log_data[row][2] = ""
-        filter_level = 1
-        while filter_level>0:
-            #Create a subfilter at the current level
-            #sf = ff[ff["Level"]==filter_level]
-            sf = [item for item in filter_list if item[0]==filter_level]
-            #Check each row of the dataframe against filter
-            for filter_row in range(len(sf)):
-                #filter_string = sf.iat[filter_row,1]
-                filter_string = sf[filter_row][1]
-                match = False
-                for char_index in range(len(test_string)):
-                    if filter_string[char_index] == "?":
-                        match = True
-                        continue
-                    elif test_string[char_index] != filter_string[char_index]:
-                        match = False
-                        break
-                    else:
-                        match = True
-                
-                #if fnmatch(test_string,filter_string):
-                if match:
-                    #If there is a match append filter description to the dataframe
-                    #df.iat[row,2] += sf.iat[filter_row,2]
-                    log_data[row][2] += sf[filter_row][2]
-
-                    #Also add colour
-                    log_data[row][12] = sf[filter_row][4]
-
-                    #Set filter level to the next one
-                    #filter_level = sf.iat[filter_row,3]
-                    filter_level = sf[filter_row][3]
-                    #Stop checking for further filters at this level
-                    break
-
-                if filter_row == len(sf)-1:
-                    #Didn't find a match in the entire filter frame / subfilter frame
-                    filter_level = 0
-
-
+matplotlib.use('QtAgg')
 
 
 class TableModel(QtCore.QAbstractTableModel):
@@ -235,9 +52,9 @@ class TableModel(QtCore.QAbstractTableModel):
 
         #Highlight rows in colours according to the applied filter
         if role == Qt.ItemDataRole.BackgroundRole:
-            if index.column() == column_names.index("Description"):
+            if index.column() == self.column_names.index("Description"):
                 value = self._data[index.row()]
-                row_colour = value[column_names.index("Colour")]
+                row_colour = value[self.column_names.index("Colour")]
                 (r,g,b) = (255, 255, 255)
                 if row_colour > "":
                     #If a colour value is defined for this row, work out corresponding RGB value and apply it
@@ -278,7 +95,7 @@ class TableModel(QtCore.QAbstractTableModel):
                         case _:
                             (r,g,b) = (255, 255, 255)
 
-            elif index.column() == column_names.index("ID"):
+            elif index.column() == self.column_names.index("ID"):
                 #CAN msg ID background light green rgb(200, 255, 200).
                 (r,g,b) = (200, 255, 200)
 
@@ -441,10 +258,13 @@ class MainWindow(QtWidgets.QMainWindow):
         #Set up window
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setWindowTitle("CAN Analyze v"+version)
+        self.setAcceptDrops(True)
         scriptDir = os.path.dirname(os.path.realpath(__file__))
         self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + "images/icon.png"))
         default_filter_file_path = scriptDir + os.path.sep + "filters/filter_default.txt"
         default_trace_config_file_path = scriptDir + os.path.sep + "config/trace_config.json"
+
+        self.dh = DataHandler(["Time", "Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "Colour"])
 
         #TODO: handle startup with nothing loaded
         #TODO: enable loading at any point during runtime
@@ -454,16 +274,17 @@ class MainWindow(QtWidgets.QMainWindow):
         loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All Files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")
 
         for loaded_file in loaded_files:
-            loadFile(loaded_file)
+            self.dh.load_file(loaded_file)
 
         #Check if any filters or traces were loaded. If not, then load defaults
-        if len(filter_list) == 0:
-            loadFile(default_filter_file_path)
-        if len(traces) == 0:
-            loadFile(default_trace_config_file_path)
+        if len(self.dh.filter_list) == 0:
+            self.dh.load_file(default_filter_file_path)
+        if len(self.dh.traces) == 0:
+            self.dh.load_file(default_trace_config_file_path)
 
-        apply_filters()
-        add_trace_points()
+        #TODO call these after loading new files. From inside DataHandler?
+        #self.dh.apply_filters()
+        #self.dh.add_trace_points()
         
 
 
@@ -473,9 +294,9 @@ class MainWindow(QtWidgets.QMainWindow):
         sc.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus) 
 
         #Add traces
-        for trace in traces:
+        for trace in self.dh.traces:
             #Plot time on x axis and each trace on y with an offset to match order in trace_config file
-            line, = sc.axes.step(x=log_data[:,0], y=log_data[:,column_names.index(trace["name"])] + 2*(len(traces) - traces.index(trace)))
+            line, = sc.axes.step(x=self.dh.log_data[:,0], y=self.dh.log_data[:,self.dh.column_names.index(trace["name"])] + 2*(len(self.dh.traces) - self.dh.traces.index(trace)))
 
         self.snap_cursor = SnappingCursor(sc.axes, line)
         sc.mpl_connect('motion_notify_event', self.snap_cursor.on_mouse_move)
@@ -485,7 +306,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #Set up table widget
         self.table = TableView() 
         #Show first 12 columns in the table
-        self.model = TableModel((log_data, column_names))
+        self.model = TableModel((self.dh.log_data, self.dh.column_names))
         self.table.setModel(self.model)
 
         #Resize table to fit contents
@@ -531,9 +352,21 @@ class MainWindow(QtWidgets.QMainWindow):
         #else:
         QtWidgets.QMainWindow.keyPressEvent(self, event)
 
-appid = u'cananalyze.cananalyze.v'+version # application ID for Windows to set correct icon
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
 
+    def dropEvent(self, event):
+        files = [u.toLocalFile() for u in event.mimeData().urls()]
+        for f in files:
+            self.dh.load_file(f)
+
+
+if sys.platform.startswith("win32"):
+    appid = u'cananalyze.cananalyze.v'+version # application ID for Windows to set correct icon
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
 app = QtWidgets.QApplication(sys.argv)
 w = MainWindow()
