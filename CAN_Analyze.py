@@ -12,7 +12,7 @@ from matplotlib.backends.backend_qt5agg import \
 
 from DataHandler import DataHandler
 
-version = u"0.1.1"
+version = u"0.1.2"
 
 matplotlib.use('QtAgg')
 
@@ -114,14 +114,15 @@ class TableModel(QtCore.QAbstractTableModel):
         # section is the index of the column/row.
         if role == Qt.ItemDataRole.DisplayRole:
             if orientation == Qt.Orientation.Horizontal:
-                #return str(self._data.columns[section])
                 return self.column_names[section]
 
             if orientation == Qt.Orientation.Vertical:
-                #return str(self._data.index[section]+1)               
-                #return list(range(1,len(self._data)+1))[section]
                 return section+1
 
+    def update(self, updated_data):
+        self._data = updated_data[0]
+        self.column_names = updated_data[1]
+        self.layoutChanged.emit()
 
 class TableView(QtWidgets.QTableView):
     
@@ -138,28 +139,61 @@ class TableView(QtWidgets.QTableView):
         else:
             QtWidgets.QTableView.keyPressEvent(self, event)
 
-class SnappingCursor:
-    """
-    A cross-hair cursor that snaps to the data point of a line, which is
-    closest to the *x* position of the cursor.
 
-    For simplicity, this assumes that *x* values of the data are sorted.
-    """
-    def __init__(self, ax, line):
-        self.ax = ax
-        self.vertical_line = ax.axvline(color='k', lw=0.8, ls='--')
-        self.measurement_start_line = ax.axvline(color='red', lw=2, ls='-')
-        self.measurement_end_line = ax.axvline(color='red', lw=2, ls='-')
-        self.measurement_step = 0
-        self.measured_value = 0
-        self.x, self.y = line.get_data()
+class MplCanvas(FigureCanvasQTAgg):
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+
+        self.x = []
         self._last_index = None
-        self.text = ax.text(0.0, 0.0, '', va="center", ha="center")
-        self.measured_value_text = ax.text(0.0, 0.0, '', va="center", ha="center")
+        self.text = self.axes.text(0.0, 0.0, '', va="center", ha="center")
+        self.measured_value_text = self.axes.text(0.0, 0.0, '', va="center", ha="center")
+        self.measured_value_text.set_visible(False)
+
+        self.axes.set_yticklabels("",ha = "right", va = "bottom")
+        self.axes.yaxis.set_major_formatter(self.y_label_formatter)
+        self.axes.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
         
+
+        super(MplCanvas, self).__init__(self.fig)
+
+    def remove_traces(self):
+        #Remove any existing traces lines from the plot
+        for line in self.axes.get_lines():
+            line.remove()
+        self.trace_count = 1
+        self.trace_labels = [""]
+
+    def initialize_cursor_snapping(self, line):
+        #This is the list to which the cursor will snap
+        self.x = line.get_xdata()
+
+        #Before adding any other lines, collect data about traces that have been added so far
+        self.trace_count = len(self.axes.get_lines())
+        self.trace_labels = []
+        for line in self.axes.get_lines():
+            self.trace_labels.append(line.get_label())
+
+        #Define vertical cursor line and measurement lines
+        self.vertical_line = self.axes.axvline(color='k', lw=0.8, ls='--')
+        self.measurement_start_line = self.axes.axvline(color='red', lw=2, ls='-')
+        self.measurement_end_line = self.axes.axvline(color='red', lw=2, ls='-')
         self.measurement_start_line.set_visible(False)
         self.measurement_end_line.set_visible(False)
-        self.measured_value_text.set_visible(False)
+        self.measurement_step = 0
+        self.measured_value = 0
+
+        self.fig.tight_layout()
+
+
+    def y_label_formatter(self, tick_val, tick_pos):
+        yval_range = range(2, 2*self.trace_count+1, 2)
+        if int(tick_val) in yval_range:
+            return self.trace_labels[yval_range.index(int(tick_val))]
+        else:
+            return ''
 
     def set_cross_hair_visible(self, visible):
         need_redraw = self.vertical_line.get_visible() != visible
@@ -172,27 +206,27 @@ class SnappingCursor:
             self._last_index = None
             need_redraw = self.set_cross_hair_visible(False)
             if need_redraw:
-                self.ax.figure.canvas.draw()
+                self.axes.figure.canvas.draw()
         else:
             self.set_cross_hair_visible(True)
             x, y = event.xdata, event.ydata
 
             #find index of the nearest match in the data to snap to            
-            index = min(np.searchsorted(self.x, x), len(self.x) - 1)
-            if index>0 and (abs(self.x[index] - x) > abs(self.x[index-1] - x)):
-                index -=1
+            self.current_index = min(np.searchsorted(self.x, x), len(self.x) - 1)
+            if self.current_index>0 and (abs(self.x[self.current_index] - x) > abs(self.x[self.current_index-1] - x)):
+                self.current_index -=1
 
-            if index == self._last_index:
+            if self.current_index == self._last_index:
                 return  # still on the same data point, no update needed
-            self._last_index = index
-            x = self.x[index]
-            y = self.y[index]
+            self._last_index = self.current_index
+            x = self.x[self.current_index]
+    
             # update snapline position
             self.vertical_line.set_xdata([x])
             # show current time and line number in log
-            self.text.set_text('t=%1.2f ms\nLine %d' % (x,index+1))
+            self.text.set_text('t=%1.2f ms\nLine %d' % (x,self.current_index+1))
             self.text.set_position((x,0))
-            self.ax.figure.canvas.draw()
+            self.axes.figure.canvas.draw()
 
     def on_press(self, event):
         print("keypress detected in matplotlib canvas:")
@@ -203,14 +237,14 @@ class SnappingCursor:
                 self.measurement_start_line.set_visible(False)
                 self.measurement_end_line.set_visible(False)
                 self.measured_value_text.set_visible(False)
-                self.ax.figure.canvas.draw()
+                self.axes.figure.canvas.draw()
                 self.measurement_step = 0 
             else:
                 if self.measurement_step == 0:
                     #press spacear once to set the first measurement line
                     self.measurement_start_line.set_xdata(self.vertical_line.get_xdata())
                     self.measurement_start_line.set_visible(True)
-                    self.ax.figure.canvas.draw()  
+                    self.axes.figure.canvas.draw()  
                     self.measurement_step += 1
 
                 elif self.measurement_step == 1:
@@ -218,36 +252,24 @@ class SnappingCursor:
                     self.measurement_end_line.set_xdata(self.vertical_line.get_xdata())
                     self.measurement_end_line.set_visible(True)
                     self.measured_value = self.measurement_end_line.get_xdata()[0] - self.measurement_start_line.get_xdata()[0]
-                    self.measured_value_text.set_text('Δ %1.2f ms' % abs(self.measured_value))
-                    self.measured_value_text.set_position(((self.measurement_end_line.get_xdata()[0]+self.measurement_start_line.get_xdata()[0])/2,0))
+                    self.measured_value_text.set_text('Δt = %1.2f ms' % abs(self.measured_value))
+                    self.measured_value_text.set_position(((self.measurement_end_line.get_xdata()[0]+self.measurement_start_line.get_xdata()[0])/2, 0))
                     self.measured_value_text.set_visible(True)
-                    self.ax.figure.canvas.draw()  
+                    self.axes.figure.canvas.draw()  
                     self.measurement_step += 1
                 else:
                     #press spacebar again to clear measurement
                     self.measurement_start_line.set_visible(False)
                     self.measurement_end_line.set_visible(False)
                     self.measured_value_text.set_visible(False)
-                    self.ax.figure.canvas.draw()  
+                    self.axes.figure.canvas.draw()  
                     self.measurement_step = 0
         else:
             print(event.key)
 
     def on_mouse_click(self, event):
         if event.inaxes:
-            #print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %   ('double' if event.dblclick else 'single', event.button,           event.x, event.y, event.xdata, event.ydata))
-            index = min(np.searchsorted(self.x, event.xdata), len(self.x) - 1)
-            #print("Row: ", index)
-            w.highlightRow(index)
-
-
-class MplCanvas(FigureCanvasQTAgg):
-
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
-
+            w.highlightRow(self.current_index)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -289,19 +311,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         #Set up matplotlib canvas widget
-        sc = MplCanvas(self, width=5, height=4, dpi=100)
+        self.mpl_canvas = MplCanvas(self, width=5, height=4, dpi=100)
         #Must set focus policy for keyboard events to be propagated
-        sc.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus) 
+        self.mpl_canvas.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus) 
+
 
         #Add traces
-        for trace in self.dh.traces:
-            #Plot time on x axis and each trace on y with an offset to match order in trace_config file
-            line, = sc.axes.step(x=self.dh.log_data[:,0], y=self.dh.log_data[:,self.dh.column_names.index(trace["name"])] + 2*(len(self.dh.traces) - self.dh.traces.index(trace)))
+        self.add_traces_to_canvas()
 
-        self.snap_cursor = SnappingCursor(sc.axes, line)
-        sc.mpl_connect('motion_notify_event', self.snap_cursor.on_mouse_move)
-        sc.mpl_connect('button_press_event', self.snap_cursor.on_mouse_click)
-        sc.mpl_connect('key_press_event', self.snap_cursor.on_press)
+        #self.snap_cursor = SnappingCursor(self.mpl_canvas.axes, line)
+        self.mpl_canvas.mpl_connect('motion_notify_event', self.mpl_canvas.on_mouse_move)
+        self.mpl_canvas.mpl_connect('button_press_event', self.mpl_canvas.on_mouse_click)
+        self.mpl_canvas.mpl_connect('key_press_event', self.mpl_canvas.on_press)
 
         #Set up table widget
         self.table = TableView() 
@@ -316,13 +337,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.table.setVisible(True)
 
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
-        toolbar = NavigationToolbar(sc, self)
+        toolbar = NavigationToolbar(self.mpl_canvas, self)
 
 
         #Lay eveything out in the window
         left_panel_layout = QtWidgets.QVBoxLayout()
         left_panel_layout.addWidget(toolbar)
-        left_panel_layout.addWidget(sc)
+        left_panel_layout.addWidget(self.mpl_canvas)
 
         main_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(left_panel_layout)
@@ -334,6 +355,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(widget)
 
         self.showMaximized()
+
+    def add_traces_to_canvas(self):
+        """Clears matplotlib canvas and adds each of the currently defined traces to the canvas
+        """
+        self.mpl_canvas.remove_traces()
+        for trace in self.dh.traces:
+            #Plot time on x axis and each trace on y with an offset to match order in trace_config file
+            line, = self.mpl_canvas.axes.step(x = self.dh.log_data[:,0],
+                                              y = self.dh.log_data[:,self.dh.column_names.index(trace["name"])] + 2*(len(self.dh.traces) - self.dh.traces.index(trace)),
+                                              label = trace["name"]
+                                              )
+        self.mpl_canvas.initialize_cursor_snapping(line)
         
     def highlightRow(self,row):
         """
@@ -362,6 +395,7 @@ class MainWindow(QtWidgets.QMainWindow):
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         for f in files:
             self.dh.load_file(f)
+        #self.table.update((self.dh.log_data, self.dh.column_names))
 
 
 if sys.platform.startswith("win32"):

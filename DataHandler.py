@@ -9,7 +9,7 @@ class DataHandler():
         """A class used to laod and manipulate CAN log data
 
         Args:
-            col_names (list): List of column names that log data will contain
+            col_names (list[str]): List of column names that log data will contain
         """
         #A Numpy array containing loaded and processed CAN data along with trace values
         self.log_data = np.array([])
