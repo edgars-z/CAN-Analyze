@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import json
+import string
 from fnmatch import fnmatch
 
 
@@ -143,6 +144,14 @@ class DataHandler():
         """
         with open(filename, "r") as read_file:
             self.traces = json.load(read_file)
+        
+        #Clean up message definitions by removing leaving only numeric characters
+        non_numeric_chars = string.printable[10:]
+        table = str.maketrans(dict.fromkeys(non_numeric_chars))
+        for trace in self.traces:
+            trace["high_msg"] = trace["high_msg"].translate(table)
+            trace["low_msg"] = trace["low_msg"].translate(table)
+
         print("Trace configuration loaded: %d traces" % len(self.traces))
         return True
 

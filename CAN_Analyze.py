@@ -1,4 +1,6 @@
 import ctypes
+import csv
+import io
 import os
 import sys
 import numpy as np
@@ -132,8 +134,22 @@ class TableView(QtWidgets.QTableView):
         """Reimplement Qt method"""
         print("TableView keypress: ",event.key())
         if event.matches(QtGui.QKeySequence.StandardKey.Copy):
-            #self.copy()
             print("Ctrl + C from TableView")
+            clipboard.setText("test copy")
+            selection = self.selectedIndexes()
+            if selection:
+                rows = sorted(index.row() for index in selection)
+                columns = sorted(index.column() for index in selection)
+                rowcount = rows[-1] - rows[0] + 1
+                colcount = columns[-1] - columns[0] + 1
+                table = [[''] * colcount for _ in range(rowcount)]
+                for index in selection:
+                    row = index.row() - rows[0]
+                    column = index.column() - columns[0]
+                    table[row][column] = index.data()
+                stream = io.StringIO()
+                csv.writer(stream).writerows(table)
+                clipboard.setText(stream.getvalue())
             event.accept()
         else:
             QtWidgets.QTableView.keyPressEvent(self, event)
@@ -413,5 +429,6 @@ if sys.platform.startswith("win32"):
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
 app = QtWidgets.QApplication(sys.argv)
+clipboard = app.clipboard()
 w = MainWindow()
 app.exec()
