@@ -114,15 +114,14 @@ class TableModel(QtCore.QAbstractTableModel):
         # section is the index of the column/row.
         if role == Qt.ItemDataRole.DisplayRole:
             if orientation == Qt.Orientation.Horizontal:
-                return self.column_names[section]
+                if section < len(self.column_names):
+                    return self.column_names[section]
+                else:
+                    return section+1
 
             if orientation == Qt.Orientation.Vertical:
                 return section+1
 
-    def update(self, updated_data):
-        self._data = updated_data[0]
-        self.column_names = updated_data[1]
-        self.layoutChanged.emit()
 
 class TableView(QtWidgets.QTableView):
     
@@ -189,7 +188,7 @@ class MplCanvas(FigureCanvasQTAgg):
 
 
     def y_label_formatter(self, tick_val, tick_pos):
-        yval_range = range(2, 2*self.trace_count+1, 2)
+        yval_range = range(2*self.trace_count, 1, -2)
         if int(tick_val) in yval_range:
             return self.trace_labels[yval_range.index(int(tick_val))]
         else:
@@ -283,8 +282,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAcceptDrops(True)
         scriptDir = os.path.dirname(os.path.realpath(__file__))
         self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + "images/icon.png"))
-        default_filter_file_path = scriptDir + os.path.sep + "filters/filter_default.txt"
-        default_trace_config_file_path = scriptDir + os.path.sep + "config/trace_config.json"
+        self.default_filter_file_path = scriptDir + os.path.sep + "filters/filter_default.txt"
+        self.default_trace_config_file_path = scriptDir + os.path.sep + "config/trace_config_default.json"
 
         self.dh = DataHandler(["Time", "Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "Colour"])
 
@@ -292,22 +291,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #TODO: enable loading at any point during runtime
         #TODO: handle multiple log files loaded at once
 
-        #Open dialog to load one or more files
-        loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All Files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")
 
-        for loaded_file in loaded_files:
-            self.dh.load_file(loaded_file)
 
-        #Check if any filters or traces were loaded. If not, then load defaults
-        if len(self.dh.filter_list) == 0:
-            self.dh.load_file(default_filter_file_path)
-        if len(self.dh.traces) == 0:
-            self.dh.load_file(default_trace_config_file_path)
-
-        #TODO call these after loading new files. From inside DataHandler?
-        #self.dh.apply_filters()
-        #self.dh.add_trace_points()
-        
 
 
         #Set up matplotlib canvas widget
@@ -316,19 +301,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mpl_canvas.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus) 
 
 
-        #Add traces
-        self.add_traces_to_canvas()
+
 
         #self.snap_cursor = SnappingCursor(self.mpl_canvas.axes, line)
         self.mpl_canvas.mpl_connect('motion_notify_event', self.mpl_canvas.on_mouse_move)
         self.mpl_canvas.mpl_connect('button_press_event', self.mpl_canvas.on_mouse_click)
         self.mpl_canvas.mpl_connect('key_press_event', self.mpl_canvas.on_press)
 
+
+
+
         #Set up table widget
-        self.table = TableView() 
-        #Show first 12 columns in the table
-        self.model = TableModel((self.dh.log_data, self.dh.column_names))
-        self.table.setModel(self.model)
+        self.table = TableView()        
+
+        #Open dialog to load one or more files
+        self.load_file_dialog()
 
         #Resize table to fit contents
         self.table.setVisible(False)
@@ -356,6 +343,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.showMaximized()
 
+    def load_file_dialog(self):
+        loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All Files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")
+        if len(loaded_files) > 0:
+            for loaded_file in loaded_files:
+                self.dh.load_file(loaded_file)
+            self.process_loaded_file()
+
+    def process_loaded_file(self):
+        #Check if any filters or traces have been loaded. If not, then load defaults
+        if len(self.dh.filter_list) == 0:
+            self.dh.load_file(self.default_filter_file_path)
+        if len(self.dh.traces) == 0:
+            self.dh.load_file(self.default_trace_config_file_path)
+        
+        #Add traces
+        self.add_traces_to_canvas()
+
+        #Add data to table
+        self.model = TableModel((self.dh.log_data, self.dh.column_names))
+        self.table.setModel(self.model)
+
     def add_traces_to_canvas(self):
         """Clears matplotlib canvas and adds each of the currently defined traces to the canvas
         """
@@ -377,13 +385,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def keyPressEvent(self, event):
         """Reimplement Qt method"""
-        print(event.key())
-        #if event.matches(QtGui.QKeySequence.StandardKey.Copy):
-        #    #self.copy()
-        #    print("Ctrl + C from TableView")
-        #    event.accept()
-        #else:
-        QtWidgets.QMainWindow.keyPressEvent(self, event)
+        print("MainWindow keypress: %s" % event.key())
+        if event.matches(QtGui.QKeySequence.StandardKey.Open):
+            print("Ctrl + O in MainWindow")
+            self.load_file_dialog()
+            event.accept()
+        else:
+            QtWidgets.QMainWindow.keyPressEvent(self, event)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -392,10 +400,12 @@ class MainWindow(QtWidgets.QMainWindow):
             event.ignore()
 
     def dropEvent(self, event):
-        files = [u.toLocalFile() for u in event.mimeData().urls()]
-        for f in files:
-            self.dh.load_file(f)
-        #self.table.update((self.dh.log_data, self.dh.column_names))
+        dropped_files = [u.toLocalFile() for u in event.mimeData().urls()]
+        if len(dropped_files) > 0:
+            for dropped_file in dropped_files:
+                self.dh.load_file(dropped_file)
+            self.process_loaded_file()
+
 
 
 if sys.platform.startswith("win32"):

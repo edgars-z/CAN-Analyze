@@ -13,16 +13,20 @@ class DataHandler():
         """
         #A Numpy array containing loaded and processed CAN data along with trace values
         self.log_data = np.array([])
+        self.log_file_loaded = False
 
         #A starting list of column names for log data
         self.column_names = col_names
+        self.initial_column_count = len(self.column_names)
 
         #A list of filters to be applied to the CAN log
         #columns = ["Level", "Filter", "Description", "Subfilter", "Colour"]
         self.filter_list = []
+        self.filter_loaded = False
 
         #A list of dicts containing trace name, high message, low message
         self.traces = []
+        self.trace_config_loaded = False
 
     def load_file(self, filename:str):
         """Determines whether the file is a CanView log or CanView filter or trace configuration and then loads it appropriately
@@ -31,15 +35,22 @@ class DataHandler():
         """
         print("Loading %s" % filename)
         if fnmatch(filename,"*.json"):
-            self.load_trace_config(filename)
+            self.trace_config_loaded = self.load_trace_config(filename)
         else:
             file_header = open(filename, "r").read().splitlines()
             if "HEADER_BEGIN" in file_header[0]:
-                self.load_canview_log(filename)
+                self.log_file_loaded = self.load_canview_log(filename)
             elif "// CanView Filter" in file_header[1]:
-                self.load_canview_filter(filename)
+                self.filter_loaded = self.load_canview_filter(filename)
             else:
                 print("File type not recognized")
+
+        if self.log_file_loaded:
+            if self.filter_loaded:
+                self.apply_filters()
+            if self.trace_config_loaded:
+                self.add_trace_points()
+
 
     def load_canview_log(self, filename:str):
         """Loads CAN message log in CanView format
@@ -78,6 +89,7 @@ class DataHandler():
         df["Colour"] = ""
         self.log_data = df.replace(np.nan,"").to_numpy()
         print("CanView log loaded: %d lines" % len(self.log_data))
+        return True
 
 
     def load_canview_filter(self, filename:str):
@@ -121,7 +133,8 @@ class DataHandler():
                 #Level, filter, description, subfilter (if present), colour (if present)
                 self.filter_list.append([filter_level, filter_line[0], filter_description, subfilter_level, filter_line[2].strip()])
         print("CanView filter loaded: %d lines" % len(self.filter_list))
-        self.apply_filters()
+        return True
+        
 
     def load_trace_config(self, filename:str):
         """Loads a JSON file containing names of traces to be plotted as well as messages which toggle "high" or "low" value
@@ -130,18 +143,14 @@ class DataHandler():
         """
         with open(filename, "r") as read_file:
             self.traces = json.load(read_file)
-            datalines = len(self.log_data)
-            for trace in self.traces:
-                self.column_names.append(trace["name"])
-                self.log_data = np.concatenate([self.log_data,np.zeros((datalines,1), dtype=np.int8)],axis=1)
         print("Trace configuration loaded: %d traces" % len(self.traces))
-        self.add_trace_points()
+        return True
 
 
     def save_trace_config(self, filename:str):
         """Saves a JSON file containing names of traces to be plotted as well as messages which toggle "high" or "low" value 
         Args:
-            filename (str): path to file to be loaded
+            filename (str): path to file to be saved
         """
         with open(filename, "w") as write_file:
             json.dump(self.traces, write_file)
@@ -150,9 +159,18 @@ class DataHandler():
     def add_trace_points(self):
         """Checks CAN data for "high" and "low" messages for each traces and adds the correspoding trace values to the log
         """        
+        
+        #Trim the columns to the initial length to delete any columns that may have been added previously
+        self.column_names = self.column_names[:self.initial_column_count]
+        self.log_data = self.log_data[:,:self.initial_column_count]
+        datalines = len(self.log_data)
         for trace in self.traces:
+            #Add each trace to the column name list and add an empty column to the log
+            self.column_names.append(trace["name"])
+            self.log_data = np.concatenate([self.log_data,np.zeros((datalines,1), dtype=np.int8)],axis=1)
             col_index = self.column_names.index(trace["name"])
-            for row in range(len(self.log_data)):
+            #Go through log row by row and set trace value at each row to 1 if there is a match
+            for row in range(datalines):
                 test_string = self.log_data[row][3:12].sum()
                 if test_string == trace["high_msg"]:
                     self.log_data[row][col_index] = 1
