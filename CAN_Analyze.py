@@ -28,7 +28,6 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role):
         if role == Qt.ItemDataRole.DisplayRole:
-            #value = self._data.iloc[index.row(), index.column()]
             value = self._data[index.row(), index.column()]
             #Format time and delta columns with 1 digit
             if index.column() == 0:

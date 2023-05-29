@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import json
-import string
 from fnmatch import fnmatch
 
 
@@ -66,31 +65,45 @@ class DataHandler():
             #Get the 3rd row of the header which contains column spacing for this file
             col_header = [int(i) for i in file_header[3].split(",")]
 
-        column_spacing = [
-            (3, 2+col_header[0]), #Delta time
-            (2+col_header[0], 2+col_header[0]+col_header[1]), #Description
-            (2+col_header[0]+col_header[1], 2+col_header[0]+col_header[1]+col_header[2]), #Message ID
-            (2+col_header[0]+col_header[1]+col_header[2]+0*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+0*col_header[3]+2),
-            (2+col_header[0]+col_header[1]+col_header[2]+1*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+1*col_header[3]+2),
-            (2+col_header[0]+col_header[1]+col_header[2]+2*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+2*col_header[3]+2),
-            (2+col_header[0]+col_header[1]+col_header[2]+3*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+3*col_header[3]+2),
-            (2+col_header[0]+col_header[1]+col_header[2]+4*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+4*col_header[3]+2),
-            (2+col_header[0]+col_header[1]+col_header[2]+5*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+5*col_header[3]+2),
-            (2+col_header[0]+col_header[1]+col_header[2]+6*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+6*col_header[3]+2),
-            (2+col_header[0]+col_header[1]+col_header[2]+7*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+7*col_header[3]+2),
-            ]
-        column_names = ["Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"]
+            column_spacing = [
+                (3, 2+col_header[0]), #Delta time
+                (2+col_header[0], 2+col_header[0]+col_header[1]), #Description
+                (2+col_header[0]+col_header[1], 2+col_header[0]+col_header[1]+col_header[2]), #Message ID
+                (2+col_header[0]+col_header[1]+col_header[2]+0*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+0*col_header[3]+2),
+                (2+col_header[0]+col_header[1]+col_header[2]+1*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+1*col_header[3]+2),
+                (2+col_header[0]+col_header[1]+col_header[2]+2*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+2*col_header[3]+2),
+                (2+col_header[0]+col_header[1]+col_header[2]+3*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+3*col_header[3]+2),
+                (2+col_header[0]+col_header[1]+col_header[2]+4*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+4*col_header[3]+2),
+                (2+col_header[0]+col_header[1]+col_header[2]+5*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+5*col_header[3]+2),
+                (2+col_header[0]+col_header[1]+col_header[2]+6*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+6*col_header[3]+2),
+                (2+col_header[0]+col_header[1]+col_header[2]+7*col_header[3], 2+col_header[0]+col_header[1]+col_header[2]+7*col_header[3]+2),
+                ]
+            column_names = ["Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"]
 
-        df = pd.read_fwf(filename,colspecs=column_spacing, skiprows=6, dtype=str, names=column_names, index_col=False)
+            #Find end of header
+            i = 4
+            header_end_found = False
+            while not header_end_found:
+                if "HEADER_END" in file_header[i]:
+                    header_end_found = True
+                i = i + 1
 
-        #Remove units from delta time and add a new column with cumulative time
-        df["Delta"] = df["Delta"].str.replace("ms","").astype("float")
-        df.insert(loc=0,column="Time",value=0.0)
-        df["Time"] = df["Delta"].cumsum()
-        df["Colour"] = ""
-        self.log_data = df.replace(np.nan,"").to_numpy()
-        print("CanView log loaded: %d lines" % len(self.log_data))
-        return True
+            if header_end_found:
+                print("Header end found on line %d" % i)
+                df = pd.read_fwf(filename,colspecs=column_spacing, skiprows=i+1, dtype=str, names=column_names, index_col=False)
+
+                #Remove units from delta time and add a new column with cumulative time
+                df["Delta"] = df["Delta"].str.replace("-","0")
+                df["Delta"] = df["Delta"].str.replace("ms","").astype("float")
+                df.insert(loc=0,column="Time",value=0.0)
+                df["Time"] = df["Delta"].cumsum()
+                df["Colour"] = ""
+                self.log_data = df.replace(np.nan,"").to_numpy()
+                print("CanView log loaded: %d lines" % len(self.log_data))
+                return True
+        
+        print("Failed to load CanView log")
+        return False
 
 
     def load_canview_filter(self, filename:str):
@@ -146,13 +159,14 @@ class DataHandler():
             self.traces = json.load(read_file)
         
         #Clean up message definitions by removing leaving only numeric characters
-        non_numeric_chars = string.printable[10:]
-        table = str.maketrans(dict.fromkeys(non_numeric_chars))
+        chars_to_remove = 'ghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r\x0b\x0c'
+        table = str.maketrans(dict.fromkeys(chars_to_remove))
         for trace in self.traces:
             trace["high_msg"] = trace["high_msg"].translate(table)
             trace["low_msg"] = trace["low_msg"].translate(table)
 
         print("Trace configuration loaded: %d traces" % len(self.traces))
+        #self.save_trace_config("debug.json")
         return True
 
 

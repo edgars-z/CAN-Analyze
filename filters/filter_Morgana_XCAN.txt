@@ -148,7 +148,7 @@ xxxxxxxx x xx xx xx xx xx xx xx xx "{s100}"
 
 SUBFILTERS_100:
 xxxxxxxx x xx 01 00 01 xx xx xx xx "PAR_PUB_CYCLEUP"      GREEN
-xxxxxxxx x xx 01 00 02 xx xx xx xx "PAR_PUB_CYCLEDOWN"      
+xxxxxxxx x xx 01 00 02 xx xx xx xx "PAR_PUB_CYCLEDOWN"    YELLOW
 xxxxxxxx x xx 01 00 03 xx xx xx xx "PAR_PUB_POWERON"      
 xxxxxxxx x xx 01 00 04 xx xx xx xx "PAR_PUB_OFFSET"      
 xxxxxxxx x xx 01 00 05 xx xx xx xx "PAR_PUB_STATUS{s200}"      
@@ -994,7 +994,7 @@ xxxxxxxx x xx 1E 22 04 xx xx xx xx "PAR_MOR_BIN_LIFT_RUN_MODE"
 xxxxxxxx x xx 1E 22 05 xx xx xx xx "PAR_MOR_FEEDER_AUTO_MODE"      
 xxxxxxxx x xx 1E 22 06 xx xx xx xx "PAR_MOR_PAPER_MODE"      
 xxxxxxxx x xx 1E 22 07 xx xx xx xx "PAR_MOR_SHEET_EXIT"      LIGHT_BLUE
-xxxxxxxx x xx 1E 22 08 xx xx xx xx "PAR_MOR_SHEET_DELIVERED"      
+xxxxxxxx x xx 1E 22 08 xx xx xx xx "PAR_MOR_SHEET_DELIVERED"  LIGHT_YELLOW    
 xxxxxxxx x xx 1E 22 09 xx xx xx xx "PAR_MOR_CALIBRATE_SENSOR"      
 xxxxxxxx x xx 1E 22 0A xx xx xx xx "PAR_MOR_CALIBRATION_STATUS"      
 xxxxxxxx x xx 1E 22 0B xx xx xx xx "PAR_MOR_DENSITY_TARGET"      
