@@ -14,7 +14,7 @@ from matplotlib.backends.backend_qt5agg import \
 
 from DataHandler import DataHandler
 
-version = u"0.1.2"
+version = u"0.1.3"
 
 matplotlib.use('QtAgg')
 
@@ -153,6 +153,23 @@ class TableView(QtWidgets.QTableView):
         else:
             QtWidgets.QTableView.keyPressEvent(self, event)
 
+    def get_selected_hexdec(self):
+        """Convert selected values from HEX to DEC
+
+        Returns:
+            _type_: _description_
+        """
+        hex = "9B"
+        dec = str(int(hex, 16))
+        return (hex, dec)        
+
+    def set_status_label(self, label:QtWidgets.QLabel):
+        """Passes a QLabel to the table. Used to display conversion of selected items from hex to dec
+
+        Args:
+            label (QtWidgets.QLabel): A label that will display selected item conversion from hex to dec
+        """        
+        self.status_label = label
 
 class MplCanvas(FigureCanvasQTAgg):
 
@@ -162,6 +179,7 @@ class MplCanvas(FigureCanvasQTAgg):
 
         self.x = []
         self._last_index = None
+        self.current_index = 0
         self.text = self.axes.text(0.0, 0.0, '', va="center", ha="center")
         self.measured_value_text = self.axes.text(0.0, 0.0, '', va="center", ha="center")
         self.measured_value_text.set_visible(False)
@@ -170,6 +188,7 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes.yaxis.set_major_formatter(self.y_label_formatter)
         self.axes.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
         
+        self.status_label = QtWidgets.QLabel()
 
         super(MplCanvas, self).__init__(self.fig)
 
@@ -239,8 +258,10 @@ class MplCanvas(FigureCanvasQTAgg):
             self.vertical_line.set_xdata([x])
             # show current time and line number in log
             self.text.set_text('t=%1.2f ms\nLine %d' % (x,self.current_index+1))
-            self.text.set_position((x,0))
+            self.status_label.setText('Line %d  t=%1.2f ms' % (self.current_index+1, x))
+            self.text.set_position((x,-1))
             self.axes.figure.canvas.draw()
+
 
     def on_press(self, event):
         print("keypress detected in matplotlib canvas:")
@@ -285,6 +306,14 @@ class MplCanvas(FigureCanvasQTAgg):
         if event.inaxes:
             w.highlightRow(self.current_index)
 
+    def set_status_label(self, label:QtWidgets.QLabel):
+        """Passes a QLabel to the canvas. Used to display timestamp and log line number
+
+        Args:
+            label (QtWidgets.QLabel): A label that will display current timestamp and line in log file
+        """        
+        self.status_label = label
+
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -303,7 +332,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dh = DataHandler(["Time", "Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "Colour"])
 
         #TODO: handle startup with nothing loaded
-        #TODO: enable loading at any point during runtime
         #TODO: handle multiple log files loaded at once
 
 
@@ -355,6 +383,18 @@ class MainWindow(QtWidgets.QMainWindow):
         widget = QtWidgets.QWidget()
         widget.setLayout(main_layout)
         self.setCentralWidget(widget)
+
+        self.statusbar = self.statusBar()
+        # Adding a temporary message
+        #self.statusbar.showMessage("Ready", 3000)
+        # Adding a permanent message
+        self.hexdec_label = QtWidgets.QLabel("HEX: XXX -> DEC: YYY")
+        self.snapline_label = QtWidgets.QLabel("Line:      t = ")
+        self.statusbar.addWidget(self.snapline_label)
+        self.statusbar.addPermanentWidget(self.hexdec_label)
+        self.table.set_status_label(self.hexdec_label)
+        self.mpl_canvas.set_status_label(self.snapline_label)
+        
 
         self.showMaximized()
 

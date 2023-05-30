@@ -6,7 +6,7 @@ from fnmatch import fnmatch
 
 class DataHandler():
     def __init__(self, col_names:list[str]):
-        """A class used to laod and manipulate CAN log data
+        """A class used to load and manipulate CAN log data
 
         Args:
             col_names (list[str]): List of column names that log data will contain
