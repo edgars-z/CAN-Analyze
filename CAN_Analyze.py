@@ -134,7 +134,6 @@ class TableView(QtWidgets.QTableView):
         print("TableView keypress: ",event.key())
         if event.matches(QtGui.QKeySequence.StandardKey.Copy):
             print("Ctrl + C from TableView")
-            clipboard.setText("test copy")
             selection = self.selectedIndexes()
             if selection:
                 rows = sorted(index.row() for index in selection)
@@ -154,14 +153,19 @@ class TableView(QtWidgets.QTableView):
             QtWidgets.QTableView.keyPressEvent(self, event)
 
     def get_selected_hexdec(self):
-        """Convert selected values from HEX to DEC
-
-        Returns:
-            _type_: _description_
+        """Gets currently selected table cells, check that they contain valid HEX, set status bar label with Hex->Dec conversion
         """
-        hex = "9B"
-        dec = str(int(hex, 16))
-        return (hex, dec)        
+        selection = self.selectedIndexes()
+        hex = ""
+        dec = ""
+        if selection:
+            first_row = selection[0].row()
+            for index in selection:
+                if index.row() == first_row and index.column() > 2 and index.column() < 12:
+                    hex = hex + index.data()
+            if len(hex) > 0:
+                dec = str(int(hex, 16))
+            self.status_label.setText(f"HEX: {hex} -> DEC: {dec}    ")
 
     def set_status_label(self, label:QtWidgets.QLabel):
         """Passes a QLabel to the table. Used to display conversion of selected items from hex to dec
@@ -355,7 +359,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         #Set up table widget
-        self.table = TableView()        
+        self.table = TableView()
+
 
         #Open dialog to load one or more files
         self.load_file_dialog()
@@ -394,6 +399,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusbar.addPermanentWidget(self.hexdec_label)
         self.table.set_status_label(self.hexdec_label)
         self.mpl_canvas.set_status_label(self.snapline_label)
+
+        selection_model = self.table.selectionModel()
+        selection_model.selectionChanged.connect(self.table.get_selected_hexdec)
         
 
         self.showMaximized()
