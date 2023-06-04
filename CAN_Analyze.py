@@ -428,6 +428,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #Add data to table
         self.model = TableModel((self.dh.log_data, self.dh.column_names))
         self.table.setModel(self.model)
+        selection_model = self.table.selectionModel()
+        selection_model.selectionChanged.connect(self.table.get_selected_hexdec)
 
     def add_traces_to_canvas(self):
         """Clears matplotlib canvas and adds each of the currently defined traces to the canvas
