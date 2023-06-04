@@ -163,7 +163,10 @@ class DataHandler():
         table = str.maketrans(dict.fromkeys(chars_to_remove))
         for trace in self.traces:
             trace["high_msg"] = trace["high_msg"].translate(table)
-            trace["low_msg"] = trace["low_msg"].translate(table)
+            if "next" in trace["low_msg"].lower():
+                trace["low_msg"] = "next"
+            else:
+                trace["low_msg"] = trace["low_msg"].translate(table)
 
         print("Trace configuration loaded: %d traces" % len(self.traces))
         #self.save_trace_config("debug.json")
@@ -192,15 +195,22 @@ class DataHandler():
             self.column_names.append(trace["name"])
             self.log_data = np.concatenate([self.log_data,np.zeros((datalines,1), dtype=np.int8)],axis=1)
             col_index = self.column_names.index(trace["name"])
+            print(trace["name"])
+            print(trace["high_msg"])
+            print(trace["low_msg"])
             #Go through log row by row and set trace value at each row to 1 if there is a match
             for row in range(datalines):
                 test_string = self.log_data[row][3:12].sum()
-                if test_string == trace["high_msg"]:
+                if test_string == trace["high_msg"] and self.log_data[row-1][col_index] == 0:
                     self.log_data[row][col_index] = 1
-                elif trace["low_msg"] == "next" or test_string == trace["low_msg"]:
+                    continue
+                if trace["low_msg"] == "next":
                     self.log_data[row][col_index] = 0
-                else:
-                    self.log_data[row][col_index] = self.log_data[row-1][col_index]
+                    continue
+                if test_string == trace["low_msg"]:
+                    self.log_data[row][col_index] = 0
+                    continue
+                self.log_data[row][col_index] = self.log_data[row-1][col_index]
 
 
     def apply_filters(self):
