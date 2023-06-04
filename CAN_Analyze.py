@@ -222,6 +222,8 @@ class MplCanvas(FigureCanvasQTAgg):
         self.measurement_step = 0
         self.measured_value = 0
 
+        self.fig.canvas.draw_idle()
+
         self.fig.tight_layout()
 
 
@@ -260,9 +262,12 @@ class MplCanvas(FigureCanvasQTAgg):
     
             # update snapline position
             self.vertical_line.set_xdata([x])
-            # show current time and line number in log
+            # show current time and line number in plot and in status bar
             self.text.set_text('t=%1.2f ms\nLine %d' % (x,self.current_index+1))
-            self.status_label.setText('Line %d  t=%1.2f ms' % (self.current_index+1, x))
+            status_label_text = 'Line %d   t=%1.2f ms   ' % (self.current_index+1, x)
+            if self.measurement_step > 0:
+                status_label_text = ''.join([status_label_text, "Δt = %1.2f ms   " % abs(self.measured_value)])
+            self.status_label.setText(status_label_text)
             self.text.set_position((x,-1))
             self.axes.figure.canvas.draw()
 
@@ -365,10 +370,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.table.setModel(self.model)
 
         #Resize table to fit contents
-        self.table.setVisible(False)
-        self.table.resizeColumnsToContents()
-        self.table.verticalHeader().setDefaultSectionSize(self.table.fontMetrics().height())
-        self.table.setVisible(True)
+        self.resize_table_to_contents()
 
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
         toolbar = NavigationToolbar(self.mpl_canvas, self)
@@ -392,7 +394,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Adding a temporary message
         #self.statusbar.showMessage("Ready", 3000)
         # Adding a permanent message
-        self.hexdec_label = QtWidgets.QLabel("HEX: XXX -> DEC: YYY")
+        self.hexdec_label = QtWidgets.QLabel("Select cell(s) to show HEX -> DEC conversion")
         self.snapline_label = QtWidgets.QLabel("Line:      t = ")
         self.statusbar.addWidget(self.snapline_label)
         self.statusbar.addPermanentWidget(self.hexdec_label)
@@ -407,6 +409,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         #Open dialog to load one or more files
         self.load_file_dialog()
+
+    def resize_table_to_contents(self):
+        """Resize TableView to fit contents. Call after loading a new log file
+        """
+        if self.table:
+            self.table.setVisible(False)
+            self.table.resizeColumnsToContents()
+            self.table.verticalHeader().setDefaultSectionSize(self.table.fontMetrics().height())
+            self.table.setVisible(True)
 
     def load_file_dialog(self):
         loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All Files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")
@@ -430,6 +441,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.table.setModel(self.model)
         selection_model = self.table.selectionModel()
         selection_model.selectionChanged.connect(self.table.get_selected_hexdec)
+        self.resize_table_to_contents()
 
     def add_traces_to_canvas(self):
         """Clears matplotlib canvas and adds each of the currently defined traces to the canvas
