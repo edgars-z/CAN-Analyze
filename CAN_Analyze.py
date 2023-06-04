@@ -361,9 +361,8 @@ class MainWindow(QtWidgets.QMainWindow):
         #Set up table widget
         self.table = TableView()
 
-
-        #Open dialog to load one or more files
-        self.load_file_dialog()
+        self.model = TableModel((self.dh.log_data, self.dh.column_names))
+        self.table.setModel(self.model)
 
         #Resize table to fit contents
         self.table.setVisible(False)
@@ -405,6 +404,9 @@ class MainWindow(QtWidgets.QMainWindow):
         
 
         self.showMaximized()
+
+        #Open dialog to load one or more files
+        self.load_file_dialog()
 
     def load_file_dialog(self):
         loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All Files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")

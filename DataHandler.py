@@ -11,13 +11,13 @@ class DataHandler():
         Args:
             col_names (list[str]): List of column names that log data will contain
         """
-        #A Numpy array containing loaded and processed CAN data along with trace values
-        self.log_data = np.array([])
-        self.log_file_loaded = False
-
         #A starting list of column names for log data
         self.column_names = col_names
         self.initial_column_count = len(self.column_names)
+
+        #A Numpy array containing loaded and processed CAN data along with trace values
+        self.log_data = np.full((1,self.initial_column_count),"")
+        self.log_file_loaded = False
 
         #A list of filters to be applied to the CAN log
         #columns = ["Level", "Filter", "Description", "Subfilter", "Colour"]
