@@ -194,6 +194,8 @@ class MplCanvas(FigureCanvasQTAgg):
         
         self.status_label = QtWidgets.QLabel()
 
+        self.trace_count = 0
+
         super(MplCanvas, self).__init__(self.fig)
 
     def remove_traces(self):
@@ -222,17 +224,28 @@ class MplCanvas(FigureCanvasQTAgg):
         self.measurement_step = 0
         self.measured_value = 0
 
+        self.text.set_text('t=%1.2f ms\nLine %d' % (0,self.current_index+1))
+        self.text.set_position((0,-1))
+        self.text.set_visible(True)
+
+        self.measured_value_text.set_text('Δt = %1.2f ms' % abs(self.measured_value))
+        self.measured_value_text.set_position(((self.measurement_end_line.get_xdata()[0]+self.measurement_start_line.get_xdata()[0])/2, 0))
+        self.measured_value_text.set_visible(True)
+
         self.fig.canvas.draw_idle()
 
         self.fig.tight_layout()
 
+        self.text.set_visible(False)
+        self.measured_value_text.set_visible(False)
+
 
     def y_label_formatter(self, tick_val, tick_pos):
-        yval_range = range(2*self.trace_count, 1, -2)
-        if int(tick_val) in yval_range:
-            return self.trace_labels[yval_range.index(int(tick_val))]
-        else:
-            return ''
+        if self.trace_count:
+            yval_range = range(2*self.trace_count, 1, -2)
+            if int(tick_val) in yval_range:
+                return self.trace_labels[yval_range.index(int(tick_val))]
+        return ''
 
     def set_cross_hair_visible(self, visible):
         need_redraw = self.vertical_line.get_visible() != visible
@@ -404,6 +417,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selection_model = self.table.selectionModel()
         selection_model.selectionChanged.connect(self.table.get_selected_hexdec)
         
+        self.dh.set_status_output_destination(self.print_to_status_label)
 
         self.showMaximized()
 
@@ -485,6 +499,23 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.dh.load_file(dropped_file)
             self.process_loaded_file()
 
+    def print_to_status_label(self, status_text:str):
+        """Used to print status or debug messages by objects / widgets to the main window status bar
+
+        Args:
+            status_text (str): text to be displyed in bottom left of the status bar
+        """        
+        
+        if self.statusbar:
+            self.statusbar.showMessage(status_text, 3000)
+            self.statusbar.repaint()
+
+        #if self.snapline_label:
+            #self.snapline_label.setText(status_text)
+            #self.snapline_label.repaint()
+            #self.statusbar.repaint()
+        else:
+            print(status_text)
 
 
 if sys.platform.startswith("win32"):

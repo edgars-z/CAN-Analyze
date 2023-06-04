@@ -33,7 +33,7 @@ class DataHandler():
         Args:
             filename (str): path to file to be loaded
         """
-        print("Loading %s" % filename)
+        self.print_status("Loading %s" % filename)
         if fnmatch(filename,"*.json"):
             self.trace_config_loaded = self.load_trace_config(filename)
         else:
@@ -43,7 +43,7 @@ class DataHandler():
             elif "// CanView Filter" in file_header[1]:
                 self.filter_loaded = self.load_canview_filter(filename)
             else:
-                print("File type not recognized")
+                self.print_status("File type not recognized")
 
         if self.log_file_loaded:
             if self.filter_loaded:
@@ -89,7 +89,7 @@ class DataHandler():
                 i = i + 1
 
             if header_end_found:
-                print("Header end found on line %d" % i)
+                #self.print_status("Header end found on line %d" % i)
                 df = pd.read_fwf(filename,colspecs=column_spacing, skiprows=i+1, dtype=str, names=column_names, index_col=False)
 
                 #Remove units from delta time and add a new column with cumulative time
@@ -99,10 +99,10 @@ class DataHandler():
                 df["Time"] = df["Delta"].cumsum()
                 df["Colour"] = ""
                 self.log_data = df.replace(np.nan,"").to_numpy()
-                print("CanView log loaded: %d lines" % len(self.log_data))
+                self.print_status("CanView log loaded: %d lines" % len(self.log_data))
                 return True
         
-        print("Failed to load CanView log")
+        self.print_status("Failed to load CanView log")
         return False
 
 
@@ -146,7 +146,7 @@ class DataHandler():
                 #Add it to the filter list
                 #Level, filter, description, subfilter (if present), colour (if present)
                 self.filter_list.append([filter_level, filter_line[0], filter_description, subfilter_level, filter_line[2].strip()])
-        print("CanView filter loaded: %d lines" % len(self.filter_list))
+        self.print_status("CanView filter loaded: %d lines" % len(self.filter_list))
         return True
         
 
@@ -168,7 +168,7 @@ class DataHandler():
             else:
                 trace["low_msg"] = trace["low_msg"].translate(table)
 
-        print("Trace configuration loaded: %d traces" % len(self.traces))
+        self.print_status("Trace configuration loaded: %d traces" % len(self.traces))
         #self.save_trace_config("debug.json")
         return True
 
@@ -195,9 +195,9 @@ class DataHandler():
             self.column_names.append(trace["name"])
             self.log_data = np.concatenate([self.log_data,np.zeros((datalines,1), dtype=np.int8)],axis=1)
             col_index = self.column_names.index(trace["name"])
-            print(trace["name"])
-            print(trace["high_msg"])
-            print(trace["low_msg"])
+            #self.print_status(trace["name"])
+            #self.print_status(trace["high_msg"])
+            #self.print_status(trace["low_msg"])
             #Go through log row by row and set trace value at each row to 1 if there is a match
             for row in range(datalines):
                 test_string = self.log_data[row][3:12].sum()
@@ -254,3 +254,12 @@ class DataHandler():
                     if filter_row == len(sf)-1:
                         #Didn't find a match in the entire filter frame / subfilter frame
                         filter_level = 0
+
+    def set_status_output_destination(self, status_function:callable):
+        self.status_output = status_function
+
+    def print_status(self, status_text:str):
+        if self.status_output:
+            self.status_output(status_text)
+        else:
+            print(status_text)
