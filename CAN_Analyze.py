@@ -346,10 +346,15 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setWindowTitle("CAN Analyze v"+version)
         self.setAcceptDrops(True)
-        scriptDir = os.path.dirname(os.path.realpath(__file__))
-        self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + "images/icon.png"))
-        self.default_filter_file_path = scriptDir + os.path.sep + "filters/filter_default.txt"
-        self.default_trace_config_file_path = scriptDir + os.path.sep + "config/trace_config_default.json"
+        #scriptDir = os.path.dirname(os.path.realpath(__file__))
+        #self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + "images/icon.png"))
+        #self.default_filter_file_path = scriptDir + os.path.sep + "filters/filter_default.txt"
+        #self.default_trace_config_file_path = scriptDir + os.path.sep + "config/trace_config_default.json"
+
+        self.setWindowIcon(QtGui.QIcon(resolve_path("images/icon.png")))
+        self.default_filter_file_path = resolve_path("filters/filter_default.txt")
+        self.default_trace_config_file_path = resolve_path("config/trace_config_default.json")
+
 
         self.dh = DataHandler(["Time", "Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "Colour"])
 
@@ -516,6 +521,16 @@ class MainWindow(QtWidgets.QMainWindow):
             #self.statusbar.repaint()
         else:
             print(status_text)
+
+def resolve_path(path):
+    if getattr(sys, "frozen", False):
+        # If the 'frozen' flag is set, we are in bundled app mode
+        resolved_path = os.path.abspath(os.path.join(sys._MEIPASS, path))
+    else:
+        # Normal development mode
+        resolved_path = os.path.abspath(os.path.join(os.getcwd(), path))
+
+    return resolved_path
 
 
 if sys.platform.startswith("win32"):
