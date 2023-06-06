@@ -1,5 +1,10 @@
 [
     {
+        "name": "TRIG_READER",
+        "high_msg": "001110F1,00,1F,00,20,00,00,00,00",
+        "low_msg": "next"
+    },
+	{
         "name": "C0\nSheet exit",
         "high_msg": "0011FF1000070062000100C8",
         "low_msg": "next"
