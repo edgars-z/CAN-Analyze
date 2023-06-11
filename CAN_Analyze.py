@@ -2,6 +2,7 @@ import ctypes
 import csv
 import io
 import os
+import string
 import sys
 import numpy as np
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -158,6 +159,7 @@ class TableView(QtWidgets.QTableView):
         selection = self.selectedIndexes()
         hex = ""
         dec = ""
+        ascii = ""
         if selection:
             first_row = selection[0].row()
             for index in selection:
@@ -165,7 +167,10 @@ class TableView(QtWidgets.QTableView):
                     hex = hex + index.data()
             if len(hex) > 0:
                 dec = str(int(hex, 16))
-            self.status_label.setText(f"HEX: {hex} -> DEC: {dec}    ")
+                ascii = bytearray.fromhex(hex).decode("ascii", errors='ignore')
+                ascii = "".join(s for s in ascii if s in string.printable)
+
+            self.status_label.setText(f"HEX: {hex} -> ASCII: {ascii} -> DEC: {dec}    ")
 
     def set_status_label(self, label:QtWidgets.QLabel):
         """Passes a QLabel to the table. Used to display conversion of selected items from hex to dec
@@ -510,10 +515,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.statusbar.showMessage(status_text, 3000)
             self.statusbar.repaint()
 
-        #if self.snapline_label:
-            #self.snapline_label.setText(status_text)
-            #self.snapline_label.repaint()
-            #self.statusbar.repaint()
         else:
             print(status_text)
 

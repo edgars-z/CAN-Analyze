@@ -158,7 +158,7 @@ class DataHandler():
         with open(filename, "r") as read_file:
             self.traces = json.load(read_file)
         
-        #Clean up message definitions by removing leaving only numeric characters
+        #Clean up message definitions by leaving only valid hex characters
         chars_to_remove = 'ghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r\x0b\x0c'
         table = str.maketrans(dict.fromkeys(chars_to_remove))
         for trace in self.traces:
