@@ -739,7 +739,7 @@ xxxxxxxx x xx 1F 00 20 xx xx xx xx "PAR_BCR_TRIG_READER"
 xxxxxxxx x xx 1F 00 30 xx xx xx xx "PAR_BCR_INSTALLED_STATUS"      
 xxxxxxxx x xx 1F 00 40 xx xx xx xx "PAR_BCR_SCANNED_PAGE_COUNT"      
 xxxxxxxx x xx 1F 00 50 xx xx xx xx "PAR_BCR_ERROR"      
-xxxxxxxx x xx 1F 00 60 xx xx xx xx "PAR_BCR_SCANNED_RAW"      
+xxxxxxxx x xx 1F 00 60 xx xx xx xx "PAR_BCR_SCANNED_RAW"      YELLOW
 xxxxxxxx x xx 1F 00 61 xx xx xx xx "PAR_BCR_SCANNED_COVER"      
 xxxxxxxx x xx 1F 00 62 xx xx xx xx "PAR_BCR_SCANNED_SET_ID"      
 xxxxxxxx x xx 1F 00 63 xx xx xx xx "PAR_BCR_SCANNED_JOB_ID"      

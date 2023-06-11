@@ -222,6 +222,10 @@ class MplCanvas(FigureCanvasQTAgg):
         for line in self.axes.get_lines():
             self.trace_labels.append(line.get_label())
 
+        #Re-set x axis limits
+        margin = max(self.x)*0.05
+        self.axes.set_xlim([-margin, max(self.x)+margin])
+
         #Define vertical cursor line and measurement lines
         self.vertical_line = self.axes.axvline(color='k', lw=0.8, ls='--')
         self.measurement_start_line = self.axes.axvline(color='red', lw=2, ls='-')
