@@ -195,8 +195,10 @@ class MplCanvas(FigureCanvasQTAgg):
 
         self.axes.set_yticklabels("",ha = "right", va = "bottom")
         self.axes.yaxis.set_major_formatter(self.y_label_formatter)
-        self.axes.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
-        
+        #self.axes.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+        self.axes.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(2))
+
+
         self.status_label = QtWidgets.QLabel()
 
         self.trace_count = 0
