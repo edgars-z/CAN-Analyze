@@ -10,14 +10,14 @@ from PyQt6.QtCore import Qt
 import matplotlib
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qt5agg import \
-    NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
 from DataHandler import DataHandler
 
 version = u"0.1.4"
 
 matplotlib.use('QtAgg')
+matplotlib.rcParams["savefig.directory"] = ""
 
 
 class TableModel(QtCore.QAbstractTableModel):
@@ -222,9 +222,10 @@ class MplCanvas(FigureCanvasQTAgg):
         for line in self.axes.get_lines():
             self.trace_labels.append(line.get_label())
 
-        #Re-set x axis limits
+        #Re-set x and y axis limits
         margin = max(self.x)*0.05
         self.axes.set_xlim([-margin, max(self.x)+margin])
+        self.axes.set_ylim([1, (self.trace_count+1)*2])
 
         #Define vertical cursor line and measurement lines
         self.vertical_line = self.axes.axvline(color='k', lw=0.8, ls='--')
@@ -347,6 +348,72 @@ class MplCanvas(FigureCanvasQTAgg):
         """        
         self.status_label = label
 
+class MplNavigationToolbar(NavigationToolbar2QT):
+    """Inherited class from matplotlib. Modified to remove unnecessary toolbar buttons and add new application specific ones
+    """    
+    def __init__(self, canvas, parent=None, coordinates=True):
+
+        #text, tooltip_text, image file, callback function
+        #None means separator
+        NavigationToolbar2QT.toolitems = (
+                    ('Home', 'Reset view', 'home', 'home'),
+                    ('Back', 'Back to previous view', 'arrow-180', 'back'),
+                    ('Forward', 'Forward to next view', 'arrow', 'forward'),
+                    (None, None, None, None),
+                    ('Pan',
+                    'Left button pans, Right button zooms\n'
+                    'x/y fixes axis, CTRL fixes aspect',
+                    'arrow-move', 'pan'),
+                    ('Zoom', 'Zoom to rectangle\nx/y fixes axis', 'magnifier-zoom', 'zoom'),
+                    #('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
+                    (None, None, None, None),
+                    ('Save', 'Save plot', 'disk', 'save_figure'),
+                    ('Open', 'Open log file, filter or trace configuration', 'folder-open-document-text', 'open_file')
+                    )
+
+        NavigationToolbar2QT.__init__(self, canvas, parent, coordinates)
+
+    def open_file(self):
+        """Callback function for Open button on toolbar
+        """        
+        if self.open_file_dialog:
+            self.open_file_dialog()
+
+    def set_file_open_function(self,file_open_function:callable):
+        """Used to set callback function for Open button on toolbar
+
+        Args:
+            file_open_function (callable): function that should be called when Open button is clicked
+        """        
+        self.open_file_dialog = file_open_function
+
+    def _icon(self, name):
+        """
+        Re-implementation of matplotlib toolbar method to bypass built-in icons and replace them with application specific ones
+        Construct a `.QIcon` from an image file *name*. Name should already include file type extension
+        """
+        # use a high-resolution icon with suffix '_large' if available
+        # note: user-provided icons may not have '_large' versions
+        """     
+        path_regular = cbook._get_data_path('images', name)
+        path_large = path_regular.with_name(
+            path_regular.name.replace('.png', '_large.png'))
+        filename = str(path_large if path_large.exists() else path_regular)
+
+        pm = QtGui.QPixmap(filename)
+        pm.setDevicePixelRatio(
+            self.devicePixelRatioF() or 1)  # rarely, devicePixelRatioF=0
+        if self.palette().color(self.backgroundRole()).value() < 128:
+            icon_color = self.palette().color(self.foregroundRole())
+            mask = pm.createMaskFromColor(
+                QtGui.QColor('black'),
+                _enum("QtCore.Qt.MaskMode").MaskOutColor)
+            pm.fill(icon_color)
+            pm.setMask(mask) 
+        """
+        path_to_icon = resolve_path("images" + os.path.sep + name)
+        print(path_to_icon)
+        return QtGui.QIcon(path_to_icon)
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -397,7 +464,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize_table_to_contents()
 
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
-        toolbar = NavigationToolbar(self.mpl_canvas, self)
+        toolbar = MplNavigationToolbar(self.mpl_canvas, self)
+        toolbar.set_file_open_function(self.load_file_dialog)
 
 
         #Lay eveything out in the window
