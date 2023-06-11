@@ -14,7 +14,7 @@ from matplotlib.backends.backend_qt5agg import \
 
 from DataHandler import DataHandler
 
-version = u"0.1.3"
+version = u"0.1.4"
 
 matplotlib.use('QtAgg')
 
@@ -346,15 +346,10 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setWindowTitle("CAN Analyze v"+version)
         self.setAcceptDrops(True)
-        #scriptDir = os.path.dirname(os.path.realpath(__file__))
-        #self.setWindowIcon(QtGui.QIcon(scriptDir + os.path.sep + "images/icon.png"))
-        #self.default_filter_file_path = scriptDir + os.path.sep + "filters/filter_default.txt"
-        #self.default_trace_config_file_path = scriptDir + os.path.sep + "config/trace_config_default.json"
-
-        self.setWindowIcon(QtGui.QIcon(resolve_path("images/icon.png")))
-        self.default_filter_file_path = resolve_path("filters/filter_default.txt")
-        self.default_trace_config_file_path = resolve_path("config/trace_config_default.json")
-
+        
+        self.setWindowIcon(QtGui.QIcon(resolve_path("images" + os.path.sep + "icon.png")))
+        self.default_filter_file_path = resolve_path("filters" + os.path.sep + "filter_default.txt", False)
+        self.default_trace_config_file_path = resolve_path("config" + os.path.sep + "trace_config_default.json", False)
 
         self.dh = DataHandler(["Time", "Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "Colour"])
 
@@ -522,8 +517,17 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             print(status_text)
 
-def resolve_path(path):
-    if getattr(sys, "frozen", False):
+def resolve_path(path:str, freeze_path:bool = True) -> str:
+    """A helper function to convert relative paths to absolute paths for correct resource location both when program is run as a script or bundled as an executable
+
+    Args:
+        path (str): relative path to desired resource
+        freeze_path (bool, optional): in a bundled executable look for resource in the un-bundle location (instead of executable directory). Defaults to True.
+
+    Returns:
+        str: runtime absolute path to desired resource
+    """     
+    if getattr(sys, "frozen", False) and freeze_path:
         # If the 'frozen' flag is set, we are in bundled app mode
         resolved_path = os.path.abspath(os.path.join(sys._MEIPASS, path))
     else:
@@ -531,7 +535,6 @@ def resolve_path(path):
         resolved_path = os.path.abspath(os.path.join(os.getcwd(), path))
 
     return resolved_path
-
 
 if sys.platform.startswith("win32"):
     appid = u'cananalyze.cananalyze.v'+version # application ID for Windows to set correct icon

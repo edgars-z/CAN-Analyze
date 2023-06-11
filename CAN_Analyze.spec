@@ -8,7 +8,7 @@ a = Analysis(
     ['CAN_Analyze.py'],
     pathex=['.venv\\Lib\\site-packages'],
     binaries=[],
-    datas=[('config', 'config'),('filters', 'filters')],
+    datas=[('images', 'images')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
