@@ -195,12 +195,11 @@ class DataHandler():
             self.column_names.append(trace["name"])
             self.log_data = np.concatenate([self.log_data,np.zeros((datalines,1), dtype=np.int8)],axis=1)
             col_index = self.column_names.index(trace["name"])
-            #self.print_status(trace["name"])
-            #self.print_status(trace["high_msg"])
-            #self.print_status(trace["low_msg"])
             #Go through log row by row and set trace value at each row to 1 if there is a match
+            print(trace["name"])
+            print(trace["high_msg"])
             for row in range(datalines):
-                test_string = self.log_data[row][3:12].sum()
+                test_string = self.log_data[row][3:12].sum()[:len(trace["high_msg"])]
                 if test_string == trace["high_msg"] and self.log_data[row-1][col_index] == 0:
                     self.log_data[row][col_index] = 1
                     continue
