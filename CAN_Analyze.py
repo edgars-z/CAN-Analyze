@@ -186,9 +186,9 @@ class MplCanvas(FigureCanvasQTAgg):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
 
-        self.x = []
+        self.snap_x = []
         self._last_index = None
-        self.current_index = 0
+        self.current_snap_index = 0
         self.text = self.axes.text(0.0, 0.0, '', va="center", ha="center")
         self.measured_value_text = self.axes.text(0.0, 0.0, '', va="center", ha="center")
         self.measured_value_text.set_visible(False)
@@ -213,14 +213,25 @@ class MplCanvas(FigureCanvasQTAgg):
         self.trace_labels = [""]
 
     def initialize_cursor_snapping(self, line):
-        #This is the list to which the cursor will snap
-        self.x = line.get_xdata()
 
-        #Before adding any other lines, collect data about traces that have been added so far
+        #Before adding any other lines, collect names of traces that have been added so far
         self.trace_count = len(self.axes.get_lines())
         self.trace_labels = []
+        self.snap_x = []
         for line in self.axes.get_lines():
             self.trace_labels.append(line.get_label())
+
+            self.x = list(line.get_xdata())
+            y = line.get_ydata()
+            
+            #Create the list to which the cursor will snap
+            for i in range(len(y)):
+                if not y[i] == y[i-1]:
+                    self.snap_x.append(self.x[i])
+
+        #Remove duplicates and sort the snapping list
+        self.snap_x = list(set(self.snap_x))
+        self.snap_x.sort()
 
         #Re-set x and y axis limits
         margin = max(self.x)*0.05
@@ -236,7 +247,7 @@ class MplCanvas(FigureCanvasQTAgg):
         self.measurement_step = 0
         self.measured_value = 0
 
-        self.text.set_text('t=%1.2f ms\nLine %d' % (0,self.current_index+1))
+        self.text.set_text('t=%1.2f ms\nLine %d' % (0,self.current_snap_index+1))
         self.text.set_position((0,-1))
         self.text.set_visible(True)
 
@@ -276,20 +287,23 @@ class MplCanvas(FigureCanvasQTAgg):
             x, y = event.xdata, event.ydata
 
             #find index of the nearest match in the data to snap to            
-            self.current_index = min(np.searchsorted(self.x, x), len(self.x) - 1)
-            if self.current_index>0 and (abs(self.x[self.current_index] - x) > abs(self.x[self.current_index-1] - x)):
-                self.current_index -=1
+            self.current_snap_index = min(np.searchsorted(self.snap_x, x), len(self.snap_x) - 1)
+            if self.current_snap_index>0 and (abs(self.snap_x[self.current_snap_index] - x) > abs(self.snap_x[self.current_snap_index-1] - x)):
+                self.current_snap_index -=1
 
-            if self.current_index == self._last_index:
+            if self.current_snap_index == self._last_index:
                 return  # still on the same data point, no update needed
-            self._last_index = self.current_index
-            x = self.x[self.current_index]
-    
+            self._last_index = self.current_snap_index
+
+            self.current_line_index = self.x.index(self.snap_x[self.current_snap_index])
+            x = self.x[self.current_line_index]
+
+
             # update snapline position
             self.vertical_line.set_xdata([x])
             # show current time and line number in plot and in status bar
-            self.text.set_text('t=%1.2f ms\nLine %d' % (x,self.current_index+1))
-            status_label_text = 'Line %d   t=%1.2f ms   ' % (self.current_index+1, x)
+            self.text.set_text('t=%1.2f ms\nLine %d' % (x,self.current_line_index+1))
+            status_label_text = 'Line %d   t=%1.2f ms   ' % (self.current_line_index+1, x)
             if self.measurement_step > 0:
                 status_label_text = ''.join([status_label_text, "Δt = %1.2f ms   " % abs(self.measured_value)])
             self.status_label.setText(status_label_text)
@@ -338,7 +352,7 @@ class MplCanvas(FigureCanvasQTAgg):
 
     def on_mouse_click(self, event):
         if event.inaxes:
-            w.highlightRow(self.current_index)
+            w.highlightRow(self.current_line_index)
 
     def set_status_label(self, label:QtWidgets.QLabel):
         """Passes a QLabel to the canvas. Used to display timestamp and log line number
@@ -526,7 +540,8 @@ class MainWindow(QtWidgets.QMainWindow):
             #Plot time on x axis and each trace on y with an offset to match order in trace_config file
             line, = self.mpl_canvas.axes.step(x = self.dh.log_data[:,0],
                                               y = self.dh.log_data[:,self.dh.column_names.index(trace["name"])] + 2*(len(self.dh.traces) - self.dh.traces.index(trace)),
-                                              label = trace["name"]
+                                              label = trace["name"],
+                                              where = 'post'
                                               )
         self.mpl_canvas.initialize_cursor_snapping(line)
         
