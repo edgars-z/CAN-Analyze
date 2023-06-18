@@ -418,7 +418,7 @@ class MplNavigationToolbar(NavigationToolbar2QT):
                     #('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
                     (None, None, None, None),
                     ('Screenshot', 'Save plot', 'camera', 'save_figure'),
-                    #('Save', 'Save log with descriptions', 'disk', 'save_log'),
+                    ('Save', 'Save log with descriptions', 'disk', 'save_log'),
                     ('Open', 'Open log file, filter or trace configuration', 'folder-open-document-text', 'open_file')
                     )
 
@@ -507,6 +507,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Create toolbar, passing canvas as first parameter, parent (self, the MainWindow) as second.
         toolbar = MplNavigationToolbar(self.mpl_canvas, self)
         toolbar.set_callback_function("open_file", self.load_file_dialog)
+        toolbar.set_callback_function("save_log", self.save_log_dialog)
 
         self.embnote_editor = QtWidgets.QPlainTextEdit()
         self.embnote_editor.setMaximumHeight(50)
@@ -560,7 +561,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.table.setVisible(True)
 
     def load_file_dialog(self):
-        loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All Files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")
+        loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")
         if len(loaded_files) > 0:
             for loaded_file in loaded_files:
                 file_type = self.dh.load_file(loaded_file)
@@ -568,6 +569,17 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.current_file_name = os.path.splitext(os.path.basename(loaded_file))[0]
                     self.setWindowTitle("".join(["CAN Analyze v", version, " - ", self.current_file_name]))
             self.process_loaded_file()
+
+    def save_log_dialog(self):
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(self,"Save log file","","Log files(*.txt);;All Files(*)")
+        if filename:
+            self.dh.save_canview_log(filename, self.embnote_editor.toPlainText())
+            self.current_file_name = os.path.splitext(os.path.basename(filename))[0]
+            self.setWindowTitle("".join(["CAN Analyze v", version, " - ", self.current_file_name]))
+            return True
+        else:
+            return False
+
 
     def process_loaded_file(self):
         #Check if any filters or traces have been loaded. If not, then load defaults
@@ -630,7 +642,10 @@ class MainWindow(QtWidgets.QMainWindow):
         dropped_files = [u.toLocalFile() for u in event.mimeData().urls()]
         if len(dropped_files) > 0:
             for dropped_file in dropped_files:
-                self.dh.load_file(dropped_file)
+                file_type = self.dh.load_file(dropped_file)
+                if file_type == "log_file":
+                    self.current_file_name = os.path.splitext(os.path.basename(dropped_file))[0]
+                    self.setWindowTitle("".join(["CAN Analyze v", version, " - ", self.current_file_name]))
             self.process_loaded_file()
 
     def print_to_status_label(self, status_text:str):

@@ -117,11 +117,41 @@ class DataHandler():
                 df["Colour"] = ""
                 self.log_data = df.replace(np.nan,"").to_numpy()
                 self.print_status("CanView log loaded: %d lines" % len(self.log_data))
-                print(self.embnote)
                 return True
         
         self.print_status("Failed to load CanView log")
         return False
+
+    def save_canview_log(self, filename:str, embnote:str = "Exported by CAN-Analyze"):
+        """Saves CAN message log with descriptions and embedded notes in CanView format
+        Args:
+            filename (str): path to file to be written
+            embnote (str): a plain text note/comment to embed in the log file
+        """
+        lines_to_write = ["HEADER_BEGIN-------------------------------------------------------------",
+                "WARNING ! Do not remove or change anything in this header.",
+                "Exported by CanView 1.23"]
+        
+        delta_field_length = len(str(max(self.log_data[:,1]))) + 6
+        description_field_length = len(max(self.log_data[:,2], key = len)) + 1
+        
+        lines_to_write.append(f"{delta_field_length - 2},{description_field_length},12,4")
+        if embnote:
+            lines_to_write.append("<EMBNOTE>")
+            lines_to_write.append(str(embnote))
+            lines_to_write.append("</EMBNOTE>")
+        lines_to_write.append("HEADER_END---------------------------------------------------------------")
+        lines_to_write.append("")
+
+        #["Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"]
+        for row in self.log_data[:,1:12]:
+            row[0] = f"> +{row[0]:.1f}ms"
+            line = '{:{delta_field_length}}{:{description_field_length}}{:12}{:4}{:4}{:4}{:4}{:4}{:4}{:4}{:4}'.format(*row, delta_field_length = delta_field_length, description_field_length = description_field_length)
+            lines_to_write.append(line)
+
+        with open(filename, 'w') as f:
+            f.write("\n".join(lines_to_write))
+            f.close()
 
 
     def load_canview_filter(self, filename:str):
