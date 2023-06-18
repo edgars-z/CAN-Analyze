@@ -28,19 +28,26 @@ class DataHandler():
         self.traces = []
         self.trace_config_loaded = False
 
-    def load_file(self, filename:str):
+    def load_file(self, filename:str) -> str:
         """Determines whether the file is a CanView log or CanView filter or trace configuration and then loads it appropriately
         Args:
             filename (str): path to file to be loaded
-        """
+
+        Returns:
+            str: file type that was loaded ["trace_config", "log_file", "filter", ""]
+        """        
         self.print_status("Loading %s" % filename)
+        file_type = ""
         if fnmatch(filename,"*.json"):
+            file_type = "trace_config"
             self.trace_config_loaded = self.load_trace_config(filename)
         else:
             file_header = open(filename, "r").read().splitlines()
             if "HEADER_BEGIN" in file_header[0]:
+                file_type = "log_file"
                 self.log_file_loaded = self.load_canview_log(filename)
             elif "// CanView Filter" in file_header[1]:
+                file_type = "filter"
                 self.filter_loaded = self.load_canview_filter(filename)
             else:
                 self.print_status("File type not recognized")
@@ -51,6 +58,7 @@ class DataHandler():
             if self.trace_config_loaded:
                 self.add_trace_points()
 
+        return file_type
 
     def load_canview_log(self, filename:str):
         """Loads CAN message log in CanView format

@@ -1,5 +1,6 @@
 import ctypes
 import csv
+import datetime
 import io
 import os
 import string
@@ -16,9 +17,9 @@ from DataHandler import DataHandler
 
 version = u"0.1.4"
 
-matplotlib.use('QtAgg')
+matplotlib.use("QtAgg")
 matplotlib.rcParams["savefig.directory"] = ""
-
+matplotlib.rcParams["savefig.format"] = "svg"
 
 class TableModel(QtCore.QAbstractTableModel):
 
@@ -198,6 +199,8 @@ class MplCanvas(FigureCanvasQTAgg):
         #self.axes.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
         self.axes.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(2))
 
+        self.log_file_nam = "log"
+        self.save_count = 1
 
         self.status_label = QtWidgets.QLabel()
 
@@ -212,7 +215,12 @@ class MplCanvas(FigureCanvasQTAgg):
         self.trace_count = 1
         self.trace_labels = [""]
 
-    def initialize_cursor_snapping(self, line):
+    def initialize_cursor_snapping(self, log_file_name):
+
+        self.log_file_name = log_file_name
+
+        #Reset save counter
+        self.save_count = 1
 
         #Before adding any other lines, collect names of traces that have been added so far
         self.trace_count = len(self.axes.get_lines())
@@ -277,38 +285,39 @@ class MplCanvas(FigureCanvasQTAgg):
         return need_redraw
 
     def on_mouse_move(self, event):
-        if not event.inaxes:
-            self._last_index = None
-            need_redraw = self.set_cross_hair_visible(False)
-            if need_redraw:
+        if self.trace_count > 0:
+            if not event.inaxes:
+                self._last_index = None
+                need_redraw = self.set_cross_hair_visible(False)
+                if need_redraw:
+                    self.axes.figure.canvas.draw()
+            else:
+                self.set_cross_hair_visible(True)
+                x, y = event.xdata, event.ydata
+
+                #find index of the nearest match in the data to snap to            
+                self.current_snap_index = min(np.searchsorted(self.snap_x, x), len(self.snap_x) - 1)
+                if self.current_snap_index>0 and (abs(self.snap_x[self.current_snap_index] - x) > abs(self.snap_x[self.current_snap_index-1] - x)):
+                    self.current_snap_index -=1
+
+                if self.current_snap_index == self._last_index:
+                    return  # still on the same data point, no update needed
+                self._last_index = self.current_snap_index
+
+                self.current_line_index = self.x.index(self.snap_x[self.current_snap_index])
+                x = self.x[self.current_line_index]
+
+
+                # update snapline position
+                self.vertical_line.set_xdata([x])
+                # show current time and line number in plot and in status bar
+                self.text.set_text('t=%1.2f ms\nLine %d' % (x,self.current_line_index+1))
+                status_label_text = 'Line %d   t=%1.2f ms   ' % (self.current_line_index+1, x)
+                if self.measurement_step > 0:
+                    status_label_text = ''.join([status_label_text, "Δt = %1.2f ms   " % abs(self.measured_value)])
+                self.status_label.setText(status_label_text)
+                self.text.set_position((x,-1))
                 self.axes.figure.canvas.draw()
-        else:
-            self.set_cross_hair_visible(True)
-            x, y = event.xdata, event.ydata
-
-            #find index of the nearest match in the data to snap to            
-            self.current_snap_index = min(np.searchsorted(self.snap_x, x), len(self.snap_x) - 1)
-            if self.current_snap_index>0 and (abs(self.snap_x[self.current_snap_index] - x) > abs(self.snap_x[self.current_snap_index-1] - x)):
-                self.current_snap_index -=1
-
-            if self.current_snap_index == self._last_index:
-                return  # still on the same data point, no update needed
-            self._last_index = self.current_snap_index
-
-            self.current_line_index = self.x.index(self.snap_x[self.current_snap_index])
-            x = self.x[self.current_line_index]
-
-
-            # update snapline position
-            self.vertical_line.set_xdata([x])
-            # show current time and line number in plot and in status bar
-            self.text.set_text('t=%1.2f ms\nLine %d' % (x,self.current_line_index+1))
-            status_label_text = 'Line %d   t=%1.2f ms   ' % (self.current_line_index+1, x)
-            if self.measurement_step > 0:
-                status_label_text = ''.join([status_label_text, "Δt = %1.2f ms   " % abs(self.measured_value)])
-            self.status_label.setText(status_label_text)
-            self.text.set_position((x,-1))
-            self.axes.figure.canvas.draw()
 
 
     def on_press(self, event):
@@ -351,7 +360,7 @@ class MplCanvas(FigureCanvasQTAgg):
             print(event.key)
 
     def on_mouse_click(self, event):
-        if event.inaxes:
+        if event.inaxes and self.trace_count > 0:
             w.highlightRow(self.current_line_index)
 
     def set_status_label(self, label:QtWidgets.QLabel):
@@ -362,10 +371,17 @@ class MplCanvas(FigureCanvasQTAgg):
         """        
         self.status_label = label
 
+    def get_default_filename(self) -> str:
+        filename = "".join([self.log_file_name, "_CAN-Analyze_" , datetime.datetime.today().strftime('%Y-%m-%d'), "_", str(self.save_count)])
+        self.save_count = self.save_count + 1
+        return filename
+
 class MplNavigationToolbar(NavigationToolbar2QT):
     """Inherited class from matplotlib. Modified to remove unnecessary toolbar buttons and add new application specific ones
     """    
     def __init__(self, canvas, parent=None, coordinates=True):
+        #A dictionary that contains functions passed on from other classes that can be used by the toolbar
+        self.linked_callbacks = dict()
 
         #text, tooltip_text, image file, callback function
         #None means separator
@@ -381,33 +397,44 @@ class MplNavigationToolbar(NavigationToolbar2QT):
                     ('Zoom', 'Zoom to rectangle\nx/y fixes axis', 'magnifier-zoom', 'zoom'),
                     #('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
                     (None, None, None, None),
-                    ('Save', 'Save plot', 'disk', 'save_figure'),
+                    ('Screenshot', 'Save plot', 'camera', 'save_figure'),
+                    ('Save', 'Save log with descriptions', 'disk', 'save_log'),
                     ('Open', 'Open log file, filter or trace configuration', 'folder-open-document-text', 'open_file')
                     )
 
         NavigationToolbar2QT.__init__(self, canvas, parent, coordinates)
 
+    def set_callback_function(self, callback_type:str, callback_function:callable):
+        """Used to set callback functions for custom toolbar buttons
+
+        Args:
+            callback_type (str): name of the callback function
+            callback_function (callable): function that should be called
+        """        
+        self.linked_callbacks[callback_type] = callback_function
+
     def open_file(self):
         """Callback function for Open button on toolbar
         """        
-        if self.open_file_dialog:
-            self.open_file_dialog()
+        func = self.linked_callbacks.get("open_file", None)
+        if func:
+            func()
 
-    def set_file_open_function(self,file_open_function:callable):
-        """Used to set callback function for Open button on toolbar
-
-        Args:
-            file_open_function (callable): function that should be called when Open button is clicked
+    def save_log(self):
+        """Callback function for Save button on toolbar
         """        
-        self.open_file_dialog = file_open_function
+        func = self.linked_callbacks.get("save_log", None)
+        if func:
+            func()
 
     def _icon(self, name):
         """
         Re-implementation of matplotlib toolbar method to bypass built-in icons and replace them with application specific ones
-        Construct a `.QIcon` from an image file *name*. Name should already include file type extension
+        Construct a `.QIcon` from an image file *name*. Name must already include file type extension
         """
         path_to_icon = resolve_path("images" + os.path.sep + name)
         return QtGui.QIcon(path_to_icon)
+
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -422,10 +449,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(resolve_path("images" + os.path.sep + "icon.png")))
         self.default_filter_file_path = resolve_path("filters" + os.path.sep + "filter_default.txt", False)
         self.default_trace_config_file_path = resolve_path("config" + os.path.sep + "trace_config_default.json", False)
+        self.current_file_name = ""
 
         self.dh = DataHandler(["Time", "Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "Colour"])
 
-        #TODO: handle startup with nothing loaded
         #TODO: handle multiple log files loaded at once
 
 
@@ -459,7 +486,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
         toolbar = MplNavigationToolbar(self.mpl_canvas, self)
-        toolbar.set_file_open_function(self.load_file_dialog)
+        toolbar.set_callback_function("open_file", self.load_file_dialog)
 
 
         #Lay eveything out in the window
@@ -510,7 +537,9 @@ class MainWindow(QtWidgets.QMainWindow):
         loaded_files, _ = QtWidgets.QFileDialog.getOpenFileNames(self,"Open log file, filter file or trace configuration", "","All Files (*);;Logs or filters (*.txt);;Trace configurations (*.json)")
         if len(loaded_files) > 0:
             for loaded_file in loaded_files:
-                self.dh.load_file(loaded_file)
+                file_type = self.dh.load_file(loaded_file)
+                if file_type == "log_file":
+                    self.current_file_name = os.path.splitext(os.path.basename(loaded_file))[0]
             self.process_loaded_file()
 
     def process_loaded_file(self):
@@ -543,7 +572,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                               label = trace["name"],
                                               where = 'post'
                                               )
-        self.mpl_canvas.initialize_cursor_snapping(line)
+        self.mpl_canvas.initialize_cursor_snapping(self.current_file_name)
         
     def highlightRow(self,row):
         """
