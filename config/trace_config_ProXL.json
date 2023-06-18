@@ -10,7 +10,7 @@
         "low_msg": "00111020,81,1E,02,00,00,00,00,xx"
     },
     {
-        "name": "SHEET DELIVERED CR/FO",
+        "name": "SHEET DELIVERED\nCR/FO",
         "high_msg": "00111020,81,1E,22,08,00,00,00,xx",
         "low_msg": "0010F010,00,1E,22,08,00,00,00,xx"
     },

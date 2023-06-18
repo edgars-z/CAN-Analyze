@@ -190,16 +190,21 @@ class MplCanvas(FigureCanvasQTAgg):
         self.snap_x = []
         self._last_index = None
         self.current_snap_index = 0
-        self.text = self.axes.text(0.0, 0.0, '', va="center", ha="center")
-        self.measured_value_text = self.axes.text(0.0, 0.0, '', va="center", ha="center")
+
+        trans = matplotlib.transforms.blended_transform_factory(self.axes.transData, self.axes.transAxes)
+        self.text = self.axes.text(0.0, 0.0, '', va="center", ha="center", transform = trans)
+        self.measured_value_text = self.axes.text(0.0, 0.0, '', va="center", ha="center", transform = trans, bbox=dict(boxstyle="round", fc="orange", alpha = 0.8))
         self.measured_value_text.set_visible(False)
+
+        self.measurement_arrow = self.axes.annotate("", xy=(0, 0), xytext=(0, 0), arrowprops=dict(arrowstyle="<->", color = "orange", lw = 2), xycoords = trans, textcoords = trans)
+        self.measurement_arrow.set_visible(False)
+
 
         self.axes.set_yticklabels("",ha = "right", va = "bottom")
         self.axes.yaxis.set_major_formatter(self.y_label_formatter)
-        #self.axes.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
         self.axes.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(2))
 
-        self.log_file_nam = "log"
+        self.log_file_name = "log"
         self.save_count = 1
 
         self.status_label = QtWidgets.QLabel()
@@ -218,6 +223,7 @@ class MplCanvas(FigureCanvasQTAgg):
     def initialize_cursor_snapping(self, log_file_name):
 
         self.log_file_name = log_file_name
+        self.axes.set_title(self.log_file_name)
 
         #Reset save counter
         self.save_count = 1
@@ -256,12 +262,16 @@ class MplCanvas(FigureCanvasQTAgg):
         self.measured_value = 0
 
         self.text.set_text('t=%1.2f ms\nLine %d' % (0,self.current_snap_index+1))
-        self.text.set_position((0,-1))
+        self.text.set_position((0,-0.1))
         self.text.set_visible(True)
 
         self.measured_value_text.set_text('Δt = %1.2f ms' % abs(self.measured_value))
-        self.measured_value_text.set_position(((self.measurement_end_line.get_xdata()[0]+self.measurement_start_line.get_xdata()[0])/2, 0))
+        self.measured_value_text.set_position(((self.measurement_end_line.get_xdata()[0]+self.measurement_start_line.get_xdata()[0])/2, 0.04))
         self.measured_value_text.set_visible(True)
+
+        self.measurement_arrow.xyann = (self.measurement_start_line.get_xdata()[0], 0)
+        self.measurement_arrow.xytext = (self.measurement_end_line.get_xdata()[0], 0)
+        self.measurement_arrow.set_visible(True)
 
         self.fig.canvas.draw_idle()
 
@@ -269,6 +279,7 @@ class MplCanvas(FigureCanvasQTAgg):
 
         self.text.set_visible(False)
         self.measured_value_text.set_visible(False)
+        self.measurement_arrow.set_visible(False)
 
 
     def y_label_formatter(self, tick_val, tick_pos):
@@ -316,7 +327,9 @@ class MplCanvas(FigureCanvasQTAgg):
                 if self.measurement_step > 0:
                     status_label_text = ''.join([status_label_text, "Δt = %1.2f ms   " % abs(self.measured_value)])
                 self.status_label.setText(status_label_text)
-                self.text.set_position((x,-1))
+
+                #x in data coordinates, y in axes coordinates
+                self.text.set_position((x, -0.1))
                 self.axes.figure.canvas.draw()
 
 
@@ -329,6 +342,7 @@ class MplCanvas(FigureCanvasQTAgg):
                 self.measurement_start_line.set_visible(False)
                 self.measurement_end_line.set_visible(False)
                 self.measured_value_text.set_visible(False)
+                self.measurement_arrow.set_visible(False)
                 self.axes.figure.canvas.draw()
                 self.measurement_step = 0 
             else:
@@ -344,9 +358,15 @@ class MplCanvas(FigureCanvasQTAgg):
                     self.measurement_end_line.set_xdata(self.vertical_line.get_xdata())
                     self.measurement_end_line.set_visible(True)
                     self.measured_value = self.measurement_end_line.get_xdata()[0] - self.measurement_start_line.get_xdata()[0]
+
                     self.measured_value_text.set_text('Δt = %1.2f ms' % abs(self.measured_value))
-                    self.measured_value_text.set_position(((self.measurement_end_line.get_xdata()[0]+self.measurement_start_line.get_xdata()[0])/2, 0))
+                    self.measured_value_text.set_position(((self.measurement_end_line.get_xdata()[0]+self.measurement_start_line.get_xdata()[0])/2, 0.04))
                     self.measured_value_text.set_visible(True)
+
+                    self.measurement_arrow.xy = (self.measurement_start_line.get_xdata()[0], 0)
+                    self.measurement_arrow.xyann = (self.measurement_end_line.get_xdata()[0], 0)
+                    self.measurement_arrow.set_visible(True)
+
                     self.axes.figure.canvas.draw()  
                     self.measurement_step += 1
                 else:
@@ -354,6 +374,7 @@ class MplCanvas(FigureCanvasQTAgg):
                     self.measurement_start_line.set_visible(False)
                     self.measurement_end_line.set_visible(False)
                     self.measured_value_text.set_visible(False)
+                    self.measurement_arrow.set_visible(False)
                     self.axes.figure.canvas.draw()  
                     self.measurement_step = 0
         else:
@@ -540,6 +561,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 file_type = self.dh.load_file(loaded_file)
                 if file_type == "log_file":
                     self.current_file_name = os.path.splitext(os.path.basename(loaded_file))[0]
+                    self.setWindowTitle("".join(["CAN Analyze v", version, " - ", self.current_file_name]))
             self.process_loaded_file()
 
     def process_loaded_file(self):
