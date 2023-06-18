@@ -1,6 +1,6 @@
 [
     {
-        "name": "TRIG_READER",
+        "name": "BCR_TRIG\nREADER",
         "high_msg": "001110F1,00,1F,00,20,00,00,00,00",
         "low_msg": "next"
     },

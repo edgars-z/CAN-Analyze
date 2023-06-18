@@ -133,7 +133,7 @@ class TableView(QtWidgets.QTableView):
         
     def keyPressEvent(self, event):
         """Reimplement Qt method"""
-        print("TableView keypress: ",event.key())
+        #print("TableView keypress: ",event.key())
         if event.matches(QtGui.QKeySequence.StandardKey.Copy):
             print("Ctrl + C from TableView")
             selection = self.selectedIndexes()
@@ -334,9 +334,8 @@ class MplCanvas(FigureCanvasQTAgg):
 
 
     def on_press(self, event):
-        print("keypress detected in matplotlib canvas:")
+        #print("keypress detected in matplotlib canvas:")
         if event.key == " ":
-            print("spacebar")
             if not event.inaxes:
                 #press spacebar outside the graph to clear measurement lines
                 self.measurement_start_line.set_visible(False)
@@ -419,7 +418,7 @@ class MplNavigationToolbar(NavigationToolbar2QT):
                     #('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
                     (None, None, None, None),
                     ('Screenshot', 'Save plot', 'camera', 'save_figure'),
-                    ('Save', 'Save log with descriptions', 'disk', 'save_log'),
+                    #('Save', 'Save log with descriptions', 'disk', 'save_log'),
                     ('Open', 'Open log file, filter or trace configuration', 'folder-open-document-text', 'open_file')
                     )
 
@@ -505,19 +504,25 @@ class MainWindow(QtWidgets.QMainWindow):
         #Resize table to fit contents
         self.resize_table_to_contents()
 
-        # Create toolbar, passing canvas as first parament, parent (self, the MainWindow) as second.
+        # Create toolbar, passing canvas as first parameter, parent (self, the MainWindow) as second.
         toolbar = MplNavigationToolbar(self.mpl_canvas, self)
         toolbar.set_callback_function("open_file", self.load_file_dialog)
 
+        self.embnote_editor = QtWidgets.QPlainTextEdit()
+        self.embnote_editor.setMaximumHeight(50)
 
         #Lay eveything out in the window
         left_panel_layout = QtWidgets.QVBoxLayout()
         left_panel_layout.addWidget(toolbar)
         left_panel_layout.addWidget(self.mpl_canvas)
 
+        right_panel_layout = QtWidgets.QVBoxLayout()
+        right_panel_layout.addWidget(self.embnote_editor)
+        right_panel_layout.addWidget(self.table)
+
         main_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(left_panel_layout)
-        main_layout.addWidget(self.table)
+        main_layout.addLayout(right_panel_layout)
 
         # Create a placeholder widget to hold left and right panels.
         widget = QtWidgets.QWidget()
@@ -583,6 +588,8 @@ class MainWindow(QtWidgets.QMainWindow):
             selection_model.selectionChanged.connect(self.table.get_selected_hexdec)
             self.resize_table_to_contents()
 
+            self.embnote_editor.setPlainText("\n".join(self.dh.embnote))
+
     def add_traces_to_canvas(self):
         """Clears matplotlib canvas and adds each of the currently defined traces to the canvas
         """
@@ -605,7 +612,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def keyPressEvent(self, event):
         """Reimplement Qt method"""
-        print("MainWindow keypress: %s" % event.key())
+        #print("MainWindow keypress: %s" % event.key())
         if event.matches(QtGui.QKeySequence.StandardKey.Open):
             print("Ctrl + O in MainWindow")
             self.load_file_dialog()

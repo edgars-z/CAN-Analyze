@@ -1,5 +1,10 @@
 [
     {
+        "name": "BCR_TRIG\nREADER",
+        "high_msg": "001110F1,00,1F,00,20,00,00,00,00",
+        "low_msg": "next"
+    },
+	{
         "name": "C0\nSheet exit",
         "high_msg": "0011FF1000070062000100C8",
         "low_msg": "next"
@@ -11,7 +16,7 @@
     },
     {
         "name": "C2\nCycle up",
-        "high_msg": "0011FF100007006100000001",
+        "high_msg": "0011FF10,00,07,00,61,00,01,00,00",
         "low_msg": "0011FF100007006100000000"
     },
     {

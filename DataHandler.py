@@ -18,6 +18,7 @@ class DataHandler():
         #A Numpy array containing loaded and processed CAN data along with trace values
         self.log_data = np.full((1,self.initial_column_count),"")
         self.log_file_loaded = False
+        self.embnote = []
 
         #A list of filters to be applied to the CAN log
         #columns = ["Level", "Filter", "Description", "Subfilter", "Colour"]
@@ -91,7 +92,15 @@ class DataHandler():
             #Find end of header
             i = 4
             header_end_found = False
+            embnote_found = False
+            self.embnote = []
             while not header_end_found:
+                if "</EMBNOTE>"  in file_header[i]:
+                    embnote_found = False
+                if embnote_found:
+                    self.embnote.append(file_header[i])
+                if "<EMBNOTE>"  in file_header[i]:
+                    embnote_found = True
                 if "HEADER_END" in file_header[i]:
                     header_end_found = True
                 i = i + 1
@@ -108,6 +117,7 @@ class DataHandler():
                 df["Colour"] = ""
                 self.log_data = df.replace(np.nan,"").to_numpy()
                 self.print_status("CanView log loaded: %d lines" % len(self.log_data))
+                print(self.embnote)
                 return True
         
         self.print_status("Failed to load CanView log")
@@ -191,7 +201,7 @@ class DataHandler():
 
 
     def add_trace_points(self):
-        """Checks CAN data for "high" and "low" messages for each traces and adds the correspoding trace values to the log
+        """Checks CAN data for "high" and "low" messages for each trace and adds the correspoding trace values to the log
         """        
         
         #Trim the columns to the initial length to delete any columns that may have been added previously
@@ -204,8 +214,8 @@ class DataHandler():
             self.log_data = np.concatenate([self.log_data,np.zeros((datalines,1), dtype=np.int8)],axis=1)
             col_index = self.column_names.index(trace["name"])
             #Go through log row by row and set trace value at each row to 1 if there is a match
-            print(trace["name"])
-            print(trace["high_msg"])
+            #print(trace["name"])
+            #print(trace["high_msg"])
             for row in range(datalines):
                 test_string = self.log_data[row][3:12].sum()[:len(trace["high_msg"])]
                 if test_string == trace["high_msg"] and self.log_data[row-1][col_index] == 0:
