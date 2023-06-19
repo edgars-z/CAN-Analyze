@@ -145,9 +145,11 @@ class DataHandler():
 
         #["Delta", "Description", "ID", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"]
         for row in self.log_data[:,1:12]:
+            temp = row[0]
             row[0] = f"> +{row[0]:.1f}ms"
             line = '{:{delta_field_length}}{:{description_field_length}}{:12}{:4}{:4}{:4}{:4}{:4}{:4}{:4}{:4}'.format(*row, delta_field_length = delta_field_length, description_field_length = description_field_length)
             lines_to_write.append(line)
+            row[0] = temp
 
         with open(filename, 'w') as f:
             f.write("\n".join(lines_to_write))

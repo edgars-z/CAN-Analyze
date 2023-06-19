@@ -220,10 +220,7 @@ class MplCanvas(FigureCanvasQTAgg):
         self.trace_count = 1
         self.trace_labels = [""]
 
-    def initialize_cursor_snapping(self, log_file_name):
-
-        self.log_file_name = log_file_name
-        self.axes.set_title(self.log_file_name)
+    def initialize_cursor_snapping(self):
 
         #Reset save counter
         self.save_count = 1
@@ -395,6 +392,10 @@ class MplCanvas(FigureCanvasQTAgg):
         filename = "".join([self.log_file_name, "_CAN-Analyze_" , datetime.datetime.today().strftime('%Y-%m-%d'), "_", str(self.save_count)])
         self.save_count = self.save_count + 1
         return filename
+
+    def set_plot_title(self,plot_title:str):
+        self.log_file_name = plot_title
+        self.axes.set_title(self.log_file_name)
 
 class MplNavigationToolbar(NavigationToolbar2QT):
     """Inherited class from matplotlib. Modified to remove unnecessary toolbar buttons and add new application specific ones
@@ -576,6 +577,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.dh.save_canview_log(filename, self.embnote_editor.toPlainText())
             self.current_file_name = os.path.splitext(os.path.basename(filename))[0]
             self.setWindowTitle("".join(["CAN Analyze v", version, " - ", self.current_file_name]))
+            self.mpl_canvas.set_plot_title(self.current_file_name)
             return True
         else:
             return False
@@ -613,8 +615,9 @@ class MainWindow(QtWidgets.QMainWindow):
                                               label = trace["name"],
                                               where = 'post'
                                               )
-        self.mpl_canvas.initialize_cursor_snapping(self.current_file_name)
-        
+        self.mpl_canvas.set_plot_title(self.current_file_name)
+        self.mpl_canvas.initialize_cursor_snapping()
+  
     def highlightRow(self,row):
         """
         Used to highlight row in QTableView after the corresponding point is clicked on the plot
